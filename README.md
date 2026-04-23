@@ -19,6 +19,8 @@ Một ứng dụng web mua sắm đĩa nhạc (Vinyl, CD) và Merchandise hoàn 
 * **Framework**: Express.js.
 * **Cơ sở dữ liệu (Database)**: PostgreSQL.
 * **ORM (Kết nối CSDL)**: Prisma (`@prisma/client`, `@prisma/adapter-pg`).
+* **Xác thực (Authentication)**: JWT (JSON Web Token) & Bcryptjs.
+* **Xử lý hình ảnh**: Multer (Tải ảnh trực tiếp lên server).
 
 ---
 
@@ -32,6 +34,17 @@ Một ứng dụng web mua sắm đĩa nhạc (Vinyl, CD) và Merchandise hoàn 
    - Khi Submit (chốt đơn), một API dạng POST được gửi về `/api/orders/checkout` kèm payload thông tin khách hàng và số lượng giỏ.
    - Backend sử dụng cơ chế **Database Transaction**: Kiểm tra đồng thời xem kho có đủ hàng không. Nếu đủ, tiến hành trừ kho trong bảng `Product`, đồng thời ghi một Record hóa đơn vào khóa ngoại bảng `Order` & `OrderItem`.
    - Frontend nhận phản hồi thành công, làm trống giỏ hàng và chuyển hướng sang trang Hoàn tất.
+
+6. **Xác thực & Phân quyền (Auth & RBAC)**:
+   - Hệ thống sử dụng JWT để định danh người dùng. Khi đăng nhập, Backend trả về một Token được lưu vào `localStorage`.
+   - **Phân quyền**: Người dùng có `role: 'ADMIN'` mới có quyền truy cập vào các API quản trị (`/api/admin/*`) thông qua middleware `verifyAdmin` ở Backend.
+   - Frontend sử dụng React Router để bảo vệ các tuyến đường Admin, chỉ cho phép truy cập khi tài khoản có quyền Admin.
+
+7. **Hệ thống Quản trị (Admin Dashboard)**:
+   - **Thống kê**: Tổng hợp doanh thu từ các đơn hàng `COMPLETED`, đếm số lượng người dùng, sản phẩm và đơn hàng.
+   - **Quản lý Sản phẩm**: Cho phép Thêm/Sửa/Xóa. Tích hợp chức năng **Upload ảnh trực tiếp** từ máy tính lên server thông qua Multer.
+   - **Quản lý Đơn hàng**: Xem danh sách đơn hàng, cập nhật trạng thái (Đang xử lý, Đã gửi, Đã giao, Đã hủy) và xem chi tiết từng món hàng khách đã đặt.
+   - **Đồng bộ dữ liệu (Real-time Sync)**: Mọi thay đổi từ Admin (Thêm sản phẩm mới, thay đổi giá, cập nhật kho) sẽ ngay lập tức kích hoạt lệnh làm mới kho dữ liệu toàn cầu (Global Redux Store), giúp giao diện người mua luôn hiển thị thông tin mới nhất mà không cần tải lại trang.
 
 ---
 

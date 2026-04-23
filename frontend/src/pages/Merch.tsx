@@ -35,7 +35,7 @@ const Merch: React.FC = () => {
     }
 
     return result;
-  }, [sortOrder, selectedBrand, searchQuery]);
+  }, [allProducts, sortOrder, selectedBrand, searchQuery]);
 
   return (
     <div className="flex-grow bg-white">

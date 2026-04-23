@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
+import AdminLayout from './layouts/AdminLayout';
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
@@ -13,6 +14,10 @@ import Contact from './pages/Contact';
 import ShippingReturns from './pages/ShippingReturns';
 import FAQ from './pages/FAQ';
 import OrderSuccess from './pages/OrderSuccess';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminUsers from './pages/admin/AdminUsers';
 import ScrollToTop from './components/ScrollToTop';
 import { Toaster } from 'react-hot-toast';
 
@@ -45,6 +50,13 @@ const App: React.FC = () => {
           <Route path="faq" element={<FAQ />} />
           <Route path="order-success" element={<OrderSuccess />} />
           <Route path="account" element={<User />} />
+        </Route>
+
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="users" element={<AdminUsers />} />
         </Route>
       </Routes>
     </Router>

@@ -8,6 +8,18 @@ const api = axios.create({
   },
 });
 
+// Đính kèm token vào header
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Xử lý dữ liệu trước khi trả về cho Component
 api.interceptors.response.use(
   (response) => response.data,

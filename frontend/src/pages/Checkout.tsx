@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import type { RootState } from '../store';
 import { clearCart } from '../store/cartSlice';
+import { fetchProducts } from '../store/productSlice';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -104,6 +105,7 @@ const Checkout: React.FC = () => {
       await api.post('/orders/checkout', payload);
       
       dispatch(clearCart());
+      dispatch(fetchProducts());
       toast.success('Đặt hàng thành công!', {
         style: {
           borderRadius: '0px',

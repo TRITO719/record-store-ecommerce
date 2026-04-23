@@ -11,6 +11,7 @@ model User {
   email     String   @unique
   fullName  String?
   password  String
+  role      String   @default("USER") // USER, ADMIN
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   orders    Order[]
@@ -24,6 +25,7 @@ model Product {
   imgUrl    String
   category  String
   stock     Int
+  description String?
   orderItems OrderItem[]
 }
 

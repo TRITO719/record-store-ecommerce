@@ -35,7 +35,7 @@ const CD: React.FC = () => {
     }
 
     return result;
-  }, [sortOrder, selectedArtist, searchQuery]);
+  }, [allProducts, sortOrder, selectedArtist, searchQuery]);
 
   return (
     <div className="flex-grow bg-white">

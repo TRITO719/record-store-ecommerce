@@ -5,11 +5,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import type { Product } from '../types';
 
-const MOCK_DATA: Product[] = [
-  { id: 1, title: "Abbey Road", artist: "The Beatles", price: 29.99, imgUrl: "https://placehold.co/100x100/ffffff/000000?text=Beatles", stock: 5 },
-  { id: 2, title: "Dark Side of the Moon", artist: "Pink Floyd", price: 34.99, imgUrl: "https://placehold.co/100x100/ffffff/000000?text=Floyd", stock: 10 },
-  { id: 3, title: "Midnights", artist: "Taylor Swift", price: 38.50, imgUrl: "https://placehold.co/100x100/ffffff/000000?text=Swift", stock: 3 },
-];
+
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -32,17 +28,19 @@ const Navbar: React.FC = () => {
     }
   }, [isSearchOpen]);
 
+  const allProducts = useSelector((state: RootState) => state.products.items);
+
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setSuggestions([]);
       return;
     }
-    const filtered = MOCK_DATA.filter(p => 
+    const filtered = allProducts.filter(p => 
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
       p.artist.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setSuggestions(filtered);
-  }, [searchQuery]);
+  }, [searchQuery, allProducts]);
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-rs-border px-8 py-5">
