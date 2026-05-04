@@ -20,6 +20,7 @@ import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
 import ScrollToTop from './components/ScrollToTop';
 import { Toaster } from 'react-hot-toast';
+import ChatBot from './components/ChatBot';
 
 import { useDispatch } from 'react-redux';
 import { fetchProducts } from './store/productSlice';
@@ -50,6 +51,7 @@ const App: React.FC = () => {
           <Route path="faq" element={<FAQ />} />
           <Route path="order-success" element={<OrderSuccess />} />
           <Route path="account" element={<User />} />
+          
         </Route>
 
         <Route path="/admin" element={<AdminLayout />}>
@@ -59,6 +61,7 @@ const App: React.FC = () => {
           <Route path="users" element={<AdminUsers />} />
         </Route>
       </Routes>
+      <ChatBot />
     </Router>
   );
 };
