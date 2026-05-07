@@ -2,8 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { store } from './store';
+import { saveCartToStorage } from './store/cartSlice';
 import App from './App';
 import './index.css';
+
+// Mỗi khi Redux store thay đổi, tự động lưu cart vào localStorage
+store.subscribe(() => {
+  saveCartToStorage(store.getState().cart);
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

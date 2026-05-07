@@ -1,0 +1,40 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+
+# Build Frontend
+build_frontend:
+  image: node:20-alpine
+  stage: build
+  script:
+    - cd frontend
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 week
+
+# Build Backend (Check dependencies)
+build_backend:
+  image: node:20-alpine
+  stage: build
+  script:
+    - cd backend
+    - npm install
+    - npx prisma generate
+
+# Deploy bằng Docker Compose (Yêu cầu server có cài sẵn gitlab-runner docker)
+deploy_docker:
+  stage: deploy
+  image: docker/compose:latest
+  services:
+    - docker:dind
+  script:
+    - docker-compose up -d --build
+  only:
+    - main

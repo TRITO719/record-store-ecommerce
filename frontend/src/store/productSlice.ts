@@ -27,21 +27,7 @@ const initialState: ProductState = {
 const productSlice = createSlice({
   name: 'products',
   initialState,
-  reducers: {
-    decreaseStock: (state, action: PayloadAction<{ id: number; quantity: number }>) => {
-      if (state.stock[action.payload.id] !== undefined) {
-        state.stock[action.payload.id] = Math.max(
-          0,
-          state.stock[action.payload.id] - action.payload.quantity
-        );
-      }
-    },
-    increaseStock: (state, action: PayloadAction<{ id: number; quantity: number }>) => {
-      if (state.stock[action.payload.id] !== undefined) {
-        state.stock[action.payload.id] += action.payload.quantity;
-      }
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchProducts.fulfilled, (state, action) => {
@@ -53,9 +39,11 @@ const productSlice = createSlice({
       })
       .addCase(fetchProducts.pending, (state) => {
         state.status = 'loading';
+      })
+      .addCase(fetchProducts.rejected, (state) => {
+        state.status = 'failed';
       });
   },
 });
 
-export const { decreaseStock, increaseStock } = productSlice.actions;
 export default productSlice.reducer;

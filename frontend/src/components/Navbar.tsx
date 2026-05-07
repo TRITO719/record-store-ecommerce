@@ -114,7 +114,7 @@ const Navbar: React.FC = () => {
                     <p className="text-[10px] font-bold uppercase tracking-wider">{product.title}</p>
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest">{product.artist}</p>
                   </div>
-                  <span className="ml-auto text-[10px] font-bold">${product.price}</span>
+                  <span className="ml-auto text-[10px] font-bold">${product.price.toFixed(2)}</span>
                 </button>
               ))}
             </div>

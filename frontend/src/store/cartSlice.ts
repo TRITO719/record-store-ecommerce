@@ -1,73 +1,64 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { Product, CartItem } from '../types';
-import type {  PayloadAction } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
 
 interface CartState {
   items: CartItem[];
 }
 
-// Khôi phục giỏ hàng từ localStorage khi khởi động
-const loadState = (): CartState => {
+// Đọc giỏ hàng từ localStorage khi khởi động — persist qua reload
+const loadCartFromStorage = (): CartState => {
   try {
-    const serializedState = localStorage.getItem('cartState');
-    if (serializedState === null) {
-      return { items: [] };
-    }
-    return JSON.parse(serializedState);
-  } catch (err) {
+    const raw = localStorage.getItem('cart');
+    if (!raw) return { items: [] };
+    const parsed = JSON.parse(raw);
+    // Validate shape: phải có items là array để tránh crash nếu dữ liệu bị corrupt
+    if (!parsed || !Array.isArray(parsed.items)) return { items: [] };
+    return parsed as CartState;
+  } catch {
     return { items: [] };
   }
 };
 
-// Lưu giỏ hàng vào localStorage mỗi khi có thay đổi
-const saveState = (items: CartItem[]) => {
+// Hàm này được gọi từ main.tsx qua store.subscribe() để tự động lưu mỗi khi cart thay đổi
+export const saveCartToStorage = (state: CartState) => {
   try {
-    const serializedState = JSON.stringify({ items });
-    localStorage.setItem('cartState', serializedState);
-  } catch (err) {
-    console.error('Could not save cart to local storage', err);
+    localStorage.setItem('cart', JSON.stringify(state));
+  } catch {
+    // Bỏ qua lỗi quota exceeded
   }
 };
 
-const initialState: CartState = loadState();
+const initialState: CartState = loadCartFromStorage();
 
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addToCart: (state, action: PayloadAction<Product & { addQuantity?: number }>) => {
-      const existingItem = state.items.find(item => item.id === action.payload.id);
-      const quantityToAdd = action.payload.addQuantity || 1;
-
+    // quantity: số lượng muốn thêm vào (mặc định 1). Stock check thực hiện tại component.
+    addToCart: (state, action: PayloadAction<{ product: Product; quantity?: number }>) => {
+      const { product, quantity = 1 } = action.payload;
+      const existingItem = state.items.find(item => item.id === product.id);
       if (existingItem) {
-        existingItem.quantity += quantityToAdd;
+        existingItem.quantity += quantity;
       } else {
-        const { addQuantity, ...product } = action.payload;
-        state.items.push({ ...product, quantity: quantityToAdd });
+        state.items.push({ ...product, quantity });
       }
-      saveState(state.items);
     },
     removeFromCart: (state, action: PayloadAction<number>) => {
       state.items = state.items.filter(item => item.id !== action.payload);
-      saveState(state.items);
     },
     updateQuantity: (state, action: PayloadAction<{ id: number; quantity: number }>) => {
       const item = state.items.find(item => item.id === action.payload.id);
       if (item && action.payload.quantity > 0) {
         item.quantity = action.payload.quantity;
       }
-      saveState(state.items);
     },
     clearCart: (state) => {
       state.items = [];
-      saveState(state.items);
-    },
-    clearPurchasedItems: (state, action: PayloadAction<number[]>) => {
-      state.items = state.items.filter(item => !action.payload.includes(item.id));
-      saveState(state.items);
     }
   },
 });
 
-export const { addToCart, removeFromCart, updateQuantity, clearCart, clearPurchasedItems } = cartSlice.actions;
+export const { addToCart, removeFromCart, updateQuantity, clearCart } = cartSlice.actions;
 export default cartSlice.reducer;

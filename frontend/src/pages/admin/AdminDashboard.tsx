@@ -24,7 +24,7 @@ const AdminDashboard: React.FC = () => {
 
   const statCards = [
     { title: 'Tổng doanh thu', value: `$${stats.revenue.toFixed(2)}`, icon: <DollarSign size={24} className="text-black" /> },
-    { title: 'Đơn hàng mới', value: stats.orders, icon: <ShoppingBag size={24} className="text-black" /> },
+    { title: 'Tổng đơn hàng', value: stats.orders, icon: <ShoppingBag size={24} className="text-black" /> },
     { title: 'Khách hàng', value: stats.users, icon: <Users size={24} className="text-black" /> },
     { title: 'Sản phẩm', value: stats.products, icon: <Disc3 size={24} className="text-black" /> },
   ];

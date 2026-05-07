@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, Ban, CheckCircle } from 'lucide-react';
+import { Shield, CheckCircle } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 

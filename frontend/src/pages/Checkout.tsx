@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { clearPurchasedItems } from '../store/cartSlice';
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import type { RootState, AppDispatch } from '../store';
+import { clearCart } from '../store/cartSlice';
 import { fetchProducts } from '../store/productSlice';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -24,19 +25,36 @@ interface FormErrors {
 }
 
 const Checkout: React.FC = () => {
-  const location = useLocation();
-  const dispatch = useDispatch();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  
-  const cartItems = location.state?.selectedItems || [];
-  
-  useEffect(() => {
-    if (cartItems.length === 0) {
-      navigate('/cart');
-    }
-  }, [cartItems, navigate]);
 
-  const totalPrice = cartItems.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+  // IDs của các item được chọn để thanh toán — mặc định chọn tất cả
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set(cartItems.map(i => i.id)));
+
+  // Khi có item mới thêm vào cart trong lúc đang ở trang Checkout, tự động chọn chúng
+  React.useEffect(() => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      cartItems.forEach(item => next.add(item.id));
+      return next;
+    });
+  }, [cartItems]);
+
+  const selectedItems = cartItems.filter(item => selectedIds.has(item.id));
+  const totalPrice = selectedItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+
+  const isAllSelected = cartItems.length > 0 && selectedIds.size === cartItems.length;
+  const toggleAll = () => {
+    setSelectedIds(isAllSelected ? new Set() : new Set(cartItems.map(i => i.id)));
+  };
+  const toggleItem = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
@@ -100,6 +118,11 @@ const Checkout: React.FC = () => {
       return;
     }
 
+    if (selectedItems.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -107,13 +130,13 @@ const Checkout: React.FC = () => {
         customerEmail: formData.email,
         customerPhone: formData.phone,
         shippingAddr: `${formData.address}, ${formData.city}`,
-        items: cartItems.map(item => ({ id: item.id, quantity: item.quantity }))
+        paymentMethod: formData.payment,
+        items: selectedItems.map(item => ({ id: item.id, quantity: item.quantity }))
       };
 
-      await api.post('/orders/checkout', payload);
-      
-      // Chỉ xóa những món đã được tick thanh toán
-      dispatch(clearPurchasedItems(cartItems.map((item: any) => item.id)));
+      const result: any = await api.post('/orders/checkout', payload);
+
+      dispatch(clearCart());
       dispatch(fetchProducts() as any);
       toast.success('Đặt hàng thành công!', {
         style: {
@@ -125,7 +148,8 @@ const Checkout: React.FC = () => {
           textTransform: 'uppercase'
         }
       });
-      navigate('/order-success');
+      // Truyền orderId thật từ API để OrderSuccess hiển thị đúng mã đơn hàng
+      navigate('/order-success', { state: { orderId: result?.order?.id } });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đặt hàng');
     } finally {
@@ -285,30 +309,54 @@ const Checkout: React.FC = () => {
 
         {/* Order Summary */}
         <div className="w-full lg:w-1/3 bg-rs-gray-light p-8 h-fit border border-rs-border">
-          <h2 className="text-lg font-bold uppercase font-display mb-6 tracking-wider">
+          <h2 className="text-lg font-bold uppercase font-display mb-4 tracking-wider">
             Tóm tắt đơn hàng
           </h2>
-          <div className="space-y-4 mb-6">
-            {cartItems.map((item) => (
-              <div key={item.id} className="flex gap-3 items-center">
-                <img
-                  src={item.imgUrl}
-                  alt={item.title}
-                  className="w-12 h-12 object-cover bg-white flex-shrink-0"
-                />
-                <div className="flex-grow min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-wider truncate">{item.title}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest">x{item.quantity}</p>
-                </div>
-                <span className="font-semibold text-sm font-sans whitespace-nowrap">
-                  ${(item.price * item.quantity).toFixed(2)}
-                </span>
-              </div>
-            ))}
+
+          {/* Check All */}
+          <label className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              onChange={toggleAll}
+              className="w-4 h-4 accent-black cursor-pointer"
+            />
+            <span className="text-[10px] font-bold uppercase tracking-widest group-hover:opacity-60 transition-opacity">
+              Chọn tất cả ({cartItems.length} sản phẩm)
+            </span>
+          </label>
+
+          <div className="space-y-3 mb-6">
+            {cartItems.map((item) => {
+              const isSelected = selectedIds.has(item.id);
+              return (
+                <label key={item.id} className={`flex gap-3 items-center cursor-pointer rounded transition-opacity ${isSelected ? '' : 'opacity-40'}`}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleItem(item.id)}
+                    className="w-4 h-4 accent-black cursor-pointer flex-shrink-0"
+                  />
+                  <img
+                    src={item.imgUrl}
+                    alt={item.title}
+                    className="w-12 h-12 object-cover bg-white flex-shrink-0"
+                  />
+                  <div className="flex-grow min-w-0">
+                    <p className="text-[11px] font-bold uppercase tracking-wider truncate">{item.title}</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">x{item.quantity}</p>
+                  </div>
+                  <span className={`font-semibold text-sm font-sans whitespace-nowrap ${isSelected ? '' : 'line-through text-gray-400'}`}>
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </span>
+                </label>
+              );
+            })}
           </div>
+
           <div className="border-t border-gray-200 pt-4 space-y-2 mb-4">
             <div className="flex justify-between text-sm font-sans text-gray-500">
-              <span>Tạm tính</span>
+              <span>Tạm tính ({selectedItems.length} sản phẩm)</span>
               <span>${totalPrice.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm font-sans text-gray-500">

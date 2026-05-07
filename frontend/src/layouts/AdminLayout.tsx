@@ -11,6 +11,7 @@ const AdminLayout: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     dispatch(logout());
     toast.success('Đã đăng xuất', { duration: 2000 });
     navigate('/');

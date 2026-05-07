@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 
 const OrderSuccess: React.FC = () => {
   const [visible, setVisible] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    // Trigger animation sau khi mount
     const t = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(t);
   }, []);
 
-  // Tạo mã đơn hàng giả
-  const orderCode = `RS-${Date.now().toString().slice(-6)}`;
+  // Lấy orderId thật từ Checkout qua navigate state
+  const orderId: string | undefined = (location.state as any)?.orderId;
+  const orderCode = orderId ? `#${orderId.split('-')[0].toUpperCase()}` : '—';
 
   return (
     <div className="flex-grow flex items-center justify-center px-6 py-20">

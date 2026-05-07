@@ -14,14 +14,17 @@ const User: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState(profile?.address || '');
   const [orders, setOrders] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn) {
       api.get('/orders/my-orders')
         .then((data: any) => setOrders(data))
-        .catch(console.error);
+        .catch(() => {
+          toast.error('Không thể tải lịch sử đơn hàng. Vui lòng thử lại.', { duration: 3000 });
+        });
     } else {
       setOrders([]);
     }
@@ -34,10 +37,17 @@ const User: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (isLoginMode) {
         const res: any = await api.post('/auth/login', { email, password });
         localStorage.setItem('token', res.token);
+        // Lưu thông tin user vào localStorage để restore state sau khi refresh trang
+        localStorage.setItem('user', JSON.stringify({
+          name: res.user.fullName || 'Khách hàng',
+          email: res.user.email,
+          role: res.user.role,
+        }));
         dispatch(login({ name: res.user.fullName || 'Khách hàng', email: res.user.email, address: '', role: res.user.role }));
         toast.success('Đăng nhập thành công', { duration: 2000 });
         
@@ -45,18 +55,21 @@ const User: React.FC = () => {
           navigate('/admin');
         }
       } else {
-        const res: any = await api.post('/auth/register', { email, password, fullName: name });
+        await api.post('/auth/register', { email, password, fullName: name });
         toast.success('Đăng ký thành công! Vui lòng đăng nhập.', { duration: 3000 });
         setIsLoginMode(true);
         setPassword('');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại!', { duration: 3000 });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     dispatch(logout());
     toast.success('Đã đăng xuất', { duration: 2000 });
   };
@@ -114,8 +127,11 @@ const User: React.FC = () => {
               </div>
             )}
 
-            <button className="w-full bg-black text-white py-5 text-[11px] font-bold uppercase tracking-[0.3em] hover:bg-zinc-800 transition-colors mt-4">
-              {isLoginMode ? 'Đăng nhập' : 'Tạo tài khoản'}
+            <button 
+              disabled={isSubmitting}
+              className="w-full bg-black text-white py-5 text-[11px] font-bold uppercase tracking-[0.3em] hover:bg-zinc-800 transition-colors mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Đang xử lý...' : (isLoginMode ? 'Đăng nhập' : 'Tạo tài khoản')}
             </button>
           </form>
 
