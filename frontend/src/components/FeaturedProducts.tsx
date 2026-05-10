@@ -140,7 +140,7 @@ const FeaturedProducts: React.FC<FeaturedProductsProps> = ({ products, title }) 
 
       {/* Quick Add Modal */}
       {modal.open && modal.product && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-6" onClick={closeModal}>
+        <div className="fixed inset-0 bg-black/5 backdrop-blur-xs z-50 flex items-center justify-center p-6" onClick={closeModal}>
           <div className="bg-white max-w-sm w-full p-8 relative" onClick={e => e.stopPropagation()}>
             <button onClick={closeModal} className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors">
               <X size={18} />
