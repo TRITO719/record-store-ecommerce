@@ -5,9 +5,17 @@ import Footer from '../components/Footer';
 
 const MainLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white text-rs-black font-sans selection:bg-rs-black selection:text-white flex flex-col">
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg-primary)',
+      color: 'var(--text-primary)',
+      fontFamily: 'var(--font-sans)',
+      display: 'flex',
+      flexDirection: 'column',
+      transition: 'background-color 0.3s ease, color 0.3s ease',
+    }}>
       <Navbar />
-      <main className="flex-grow flex flex-col">
+      <main style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <Outlet />
       </main>
       <Footer />
