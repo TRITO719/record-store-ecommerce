@@ -1,13 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-
-
 export interface UserProfile {
+  id?: string;
   name: string;
   email: string;
-  address: string;
   phone: string;
+  address: string;
   role: string;
 }
 
@@ -25,13 +24,24 @@ const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    login: (state, action: PayloadAction<{ name: string; email: string; address?: string; role?: string }>) => {
+    login: (
+      state,
+      action: PayloadAction<{
+        id?: string;
+        name: string;
+        email: string;
+        phone?: string;
+        address?: string;
+        role?: string;
+      }>,
+    ) => {
       state.isLoggedIn = true;
       state.profile = {
+        id: action.payload.id,
         name: action.payload.name,
         email: action.payload.email,
+        phone: action.payload.phone || '',
         address: action.payload.address || '',
-        phone: '',
         role: action.payload.role || 'USER',
       };
     },
@@ -42,6 +52,19 @@ const userSlice = createSlice({
     updateProfile: (state, action: PayloadAction<Partial<UserProfile>>) => {
       if (state.profile) {
         state.profile = { ...state.profile, ...action.payload };
+        // Keep localStorage in sync so the next page refresh restores the updated profile.
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            localStorage.setItem(
+              'user',
+              JSON.stringify({ ...parsed, ...action.payload }),
+            );
+          } catch {
+            // ignore
+          }
+        }
       }
     },
   },

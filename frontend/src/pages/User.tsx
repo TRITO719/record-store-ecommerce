@@ -1,21 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  User as UserIcon, Package, MapPin, Lock, Settings, LogOut,
-  Plus, Edit2, Trash2, Star, ChevronRight, Eye,
-  EyeOff, CheckCircle, AlertCircle, Clock, Truck,
-  XCircle, Home, Briefcase, Check, X, LayoutDashboard,
+  User as UserIcon,
+  Package,
+  Lock,
+  Settings,
+  LogOut,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Truck,
+  XCircle,
+  Check,
+  LayoutDashboard,
+  MapPin,
 } from 'lucide-react';
 import { login, logout, updateProfile as updateReduxProfile } from '../store/userSlice';
 import type { RootState } from '../store';
 import toast from 'react-hot-toast';
 import api from '../services/api';
-import { useAccount, type SavedAddress } from '../context/AccountContext';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Tab = 'overview' | 'profile' | 'orders' | 'security' | 'settings';
+
+interface Order {
+  id: string;
+  status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED';
+  totalAmount: number;
+  createdAt: string;
+  shippingAddr: string;
+  customerEmail: string;
+  customerPhone: string;
+  orderItems: {
+    id: number;
+    productId: number;
+    quantity: number;
+    priceAtTime: number;
+    product: { id: number; title: string; artist: string; imgUrl: string; category: string };
+  }[];
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-type Tab = 'overview' | 'profile' | 'orders' | 'addresses' | 'security' | 'settings';
 
 const ORDER_STATUS_CONFIG = {
   PENDING:    { label: 'Chờ xác nhận', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: <Clock size={13} /> },
@@ -25,10 +55,8 @@ const ORDER_STATUS_CONFIG = {
   CANCELLED:  { label: 'Đã hủy',       color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  icon: <XCircle size={13} /> },
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 const StatusBadge: React.FC<{ status: keyof typeof ORDER_STATUS_CONFIG }> = ({ status }) => {
-  const cfg = ORDER_STATUS_CONFIG[status] || ORDER_STATUS_CONFIG.PENDING;
+  const cfg = ORDER_STATUS_CONFIG[status] ?? ORDER_STATUS_CONFIG.PENDING;
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -60,7 +88,7 @@ const FormField: React.FC<{
       <input
         type={type}
         value={value}
-        onChange={e => onChange?.(e.target.value)}
+        onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
         style={{
@@ -76,22 +104,26 @@ const FormField: React.FC<{
           transition: 'border-color 0.2s',
           cursor: disabled ? 'not-allowed' : 'auto',
         }}
-        onFocus={e => { if (!disabled) e.target.style.borderColor = 'var(--accent)'; }}
-        onBlur={e => { e.target.style.borderColor = error ? 'var(--warm-rose)' : 'var(--border)'; }}
+        onFocus={(e) => { if (!disabled) e.target.style.borderColor = 'var(--accent)'; }}
+        onBlur={(e) => { e.target.style.borderColor = error ? 'var(--warm-rose)' : 'var(--border)'; }}
       />
-      {suffix && <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>{suffix}</div>}
+      {suffix && (
+        <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
+          {suffix}
+        </div>
+      )}
     </div>
     {error && <p style={{ fontSize: 11, color: 'var(--warm-rose)', marginTop: 5 }}>{error}</p>}
   </div>
 );
 
-const SectionCard: React.FC<{ children: React.ReactNode; title?: string; subtitle?: string; action?: React.ReactNode }> = ({ children, title, subtitle, action }) => (
-  <div style={{
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-xl)',
-    overflow: 'hidden',
-  }}>
+const SectionCard: React.FC<{
+  children: React.ReactNode;
+  title?: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}> = ({ children, title, subtitle, action }) => (
+  <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
     {(title || action) && (
       <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
         <div>
@@ -107,55 +139,37 @@ const SectionCard: React.FC<{ children: React.ReactNode; title?: string; subtitl
 
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
 
-const OverviewTab: React.FC<{ setTab: (t: Tab) => void }> = ({ setTab }) => {
-  const { profile, orders, addresses, ordersLoading } = useAccount();
+const OverviewTab: React.FC<{
+  orders: Order[];
+  ordersLoading: boolean;
+  setTab: (t: Tab) => void;
+}> = ({ orders, ordersLoading, setTab }) => {
   const { profile: reduxProfile } = useSelector((s: RootState) => s.user);
 
   const stats = [
     { label: 'Tổng đơn hàng', value: orders.length, icon: <Package size={20} />, color: 'var(--accent)' },
-    { label: 'Đã giao thành công', value: orders.filter(o => o.status === 'COMPLETED').length, icon: <CheckCircle size={20} />, color: '#1db954' },
-    { label: 'Đang xử lý', value: orders.filter(o => ['PENDING','PROCESSING','SHIPPED'].includes(o.status)).length, icon: <Clock size={20} />, color: '#f59e0b' },
-    { label: 'Địa chỉ đã lưu', value: addresses.length, icon: <MapPin size={20} />, color: '#8b5cf6' },
+    { label: 'Đã giao thành công', value: orders.filter((o) => o.status === 'COMPLETED').length, icon: <CheckCircle size={20} />, color: '#1db954' },
+    { label: 'Đang xử lý', value: orders.filter((o) => ['PENDING', 'PROCESSING', 'SHIPPED'].includes(o.status)).length, icon: <Clock size={20} />, color: '#f59e0b' },
   ];
 
-  const recentOrders = [...orders].slice(0, 3);
+  const recentOrders = orders.slice(0, 3);
+  const initials = (reduxProfile?.name || 'U').charAt(0).toUpperCase();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Welcome */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(29,185,84,0.12) 0%, rgba(139,92,246,0.06) 100%)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-xl)',
-        padding: '28px 28px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 20,
-      }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%)',
-          color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', flexShrink: 0,
-        }}>
-          {profile?.avatarInitials || 'U'}
+      <div style={{ background: 'linear-gradient(135deg, rgba(29,185,84,0.12) 0%, rgba(139,92,246,0.06) 100%)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '28px', display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', flexShrink: 0 }}>
+          {initials}
         </div>
         <div>
           <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Xin chào trở lại 👋</p>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, color: 'var(--text-primary)', marginBottom: 4 }}>
-            {profile?.fullName || 'Khách hàng'}
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{profile?.email}</p>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, color: 'var(--text-primary)', marginBottom: 4 }}>{reduxProfile?.name || 'Khách hàng'}</h2>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{reduxProfile?.email}</p>
         </div>
         {reduxProfile?.role?.toUpperCase() === 'ADMIN' && (
           <div style={{ marginLeft: 'auto' }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '6px 14px', borderRadius: 'var(--radius-full)',
-              background: 'var(--accent-soft)', color: 'var(--accent)',
-              fontSize: 11, fontWeight: 700, letterSpacing: '0.06em',
-              border: '1px solid rgba(29,185,84,0.3)',
-            }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 'var(--radius-full)', background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', border: '1px solid rgba(29,185,84,0.3)' }}>
               <LayoutDashboard size={12} /> ADMIN
             </span>
           </div>
@@ -163,17 +177,9 @@ const OverviewTab: React.FC<{ setTab: (t: Tab) => void }> = ({ setTab }) => {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         {stats.map((s, i) => (
-          <div key={i} style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '20px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}>
+          <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ color: s.color, opacity: 0.8 }}>{s.icon}</div>
             <div>
               <p style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 28, color: 'var(--text-primary)', lineHeight: 1 }}>{s.value}</p>
@@ -194,20 +200,20 @@ const OverviewTab: React.FC<{ setTab: (t: Tab) => void }> = ({ setTab }) => {
       >
         {ordersLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[0,1,2].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 'var(--radius-md)' }} />)}
+            {[0, 1, 2].map((i) => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 'var(--radius-md)' }} />)}
           </div>
         ) : recentOrders.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 0' }}>
             <Package size={36} style={{ color: 'var(--text-muted)', marginBottom: 10 }} strokeWidth={1} />
             <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Chưa có đơn hàng nào</p>
-            <button onClick={() => window.location.href = '/vinyl'} style={{ marginTop: 12, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+            <button onClick={() => (window.location.href = '/vinyl')} style={{ marginTop: 12, fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
               Bắt đầu mua sắm →
             </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {recentOrders.map(order => (
-              <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }} onClick={() => setTab('orders')}>
+            {recentOrders.map((order) => (
+              <div key={order.id} onClick={() => setTab('orders')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}>
                 <Package size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>#{order.id.split('-')[0].toUpperCase()}</p>
@@ -227,21 +233,12 @@ const OverviewTab: React.FC<{ setTab: (t: Tab) => void }> = ({ setTab }) => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {[
             { icon: <UserIcon size={18} />, label: 'Cập nhật thông tin', tab: 'profile' as Tab },
-            { icon: <MapPin size={18} />, label: 'Quản lý địa chỉ', tab: 'addresses' as Tab },
-            { icon: <Lock size={18} />, label: 'Đổi mật khẩu', tab: 'security' as Tab },
+            { icon: <Lock size={18} />,    label: 'Đổi mật khẩu',       tab: 'security' as Tab },
+            { icon: <Settings size={18} />, label: 'Cài đặt',            tab: 'settings' as Tab },
           ].map((item, i) => (
-            <button
-              key={i}
-              onClick={() => setTab(item.tab)}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '20px 16px', borderRadius: 'var(--radius-lg)',
-                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                fontSize: 13, fontWeight: 500, transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-soft)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+            <button key={i} onClick={() => setTab(item.tab)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '20px 16px', borderRadius: 'var(--radius-lg)', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, transition: 'all 0.2s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-soft)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg-secondary)'; }}
             >
               {item.icon}
               <span style={{ textAlign: 'center', lineHeight: 1.3 }}>{item.label}</span>
@@ -253,21 +250,32 @@ const OverviewTab: React.FC<{ setTab: (t: Tab) => void }> = ({ setTab }) => {
   );
 };
 
-// ─── Tab: Profile ─────────────────────────────────────────────────────────────
+// ─── Tab: Profile (merged with Address) ──────────────────────────────────────
 
 const ProfileTab: React.FC = () => {
   const dispatch = useDispatch();
   const { profile: reduxProfile } = useSelector((s: RootState) => s.user);
-  const { updateProfile } = useAccount();
+
   const [fullName, setFullName] = useState(reduxProfile?.name || '');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(reduxProfile?.phone || '');
+  const [address, setAddress] = useState(reduxProfile?.address || '');
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Sync from Redux when profile is hydrated after login
+  useEffect(() => {
+    if (reduxProfile) {
+      setFullName((prev) => prev || reduxProfile.name || '');
+      setPhone((prev) => prev || reduxProfile.phone || '');
+      setAddress((prev) => prev || reduxProfile.address || '');
+    }
+  }, [reduxProfile]);
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!fullName.trim()) e.fullName = 'Vui lòng nhập họ tên';
-    if (phone && !/^(0|\+84)[0-9]{9,10}$/.test(phone.replace(/\s/g, ''))) e.phone = 'Số điện thoại không hợp lệ';
+    if (phone && !/^(0|\+84)[0-9]{9,10}$/.test(phone.replace(/\s/g, '')))
+      e.phone = 'Số điện thoại không hợp lệ';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -275,23 +283,91 @@ const ProfileTab: React.FC = () => {
   const handleSave = async () => {
     if (!validate()) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 600)); // simulate API
-    dispatch(updateReduxProfile({ name: fullName }));
-    updateProfile({ fullName, phone });
-    toast.success('Thông tin đã được cập nhật');
-    setSaving(false);
+    try {
+      // Real API call — updates DB via PUT /api/auth/profile
+      const result: any = await api.put('/auth/profile', {
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+      });
+
+      // Update Redux + localStorage so data persists across refreshes
+      dispatch(
+        updateReduxProfile({
+          name: result.user?.fullName || fullName,
+          phone: result.user?.phone || phone,
+          address: result.user?.address || address,
+        }),
+      );
+
+      // Persist to localStorage
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          localStorage.setItem(
+            'user',
+            JSON.stringify({
+              ...parsed,
+              name: result.user?.fullName || fullName,
+              phone: result.user?.phone || phone,
+              address: result.user?.address || address,
+            }),
+          );
+        } catch {/* ignore */}
+      }
+
+      toast.success('Thông tin đã được cập nhật');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Lỗi khi cập nhật thông tin');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <SectionCard title="Thông tin cá nhân" subtitle="Cập nhật thông tin hồ sơ của bạn">
+      <SectionCard
+        title="Thông tin cá nhân & Địa chỉ"
+        subtitle="Thông tin này sẽ được tự động điền vào form thanh toán"
+      >
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
           <div style={{ gridColumn: '1 / -1' }}>
-            <FormField label="Họ và tên" value={fullName} onChange={setFullName} placeholder="Nguyễn Văn A" error={errors.fullName} />
+            <FormField
+              label="Họ và tên"
+              value={fullName}
+              onChange={setFullName}
+              placeholder="Nguyễn Văn A"
+              error={errors.fullName}
+            />
           </div>
-          <FormField label="Email" value={reduxProfile?.email || ''} disabled />
-          <FormField label="Số điện thoại" value={phone} onChange={setPhone} type="tel" placeholder="0901234567" error={errors.phone} />
+          <FormField
+            label="Email"
+            value={reduxProfile?.email || ''}
+            disabled
+          />
+          <FormField
+            label="Số điện thoại"
+            value={phone}
+            onChange={setPhone}
+            type="tel"
+            placeholder="0901234567"
+            error={errors.phone}
+          />
+          <div style={{ gridColumn: '1 / -1' }}>
+            <FormField
+              label="Địa chỉ giao hàng mặc định"
+              value={address}
+              onChange={setAddress}
+              placeholder="123 Đường ABC, Quận 1, TP.HCM"
+            />
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>
+              <MapPin size={10} style={{ display: 'inline', marginRight: 4 }} />
+              Địa chỉ này sẽ được dùng mặc định khi thanh toán
+            </p>
+          </div>
         </div>
+
         <button
           onClick={handleSave}
           disabled={saving}
@@ -306,25 +382,27 @@ const ProfileTab: React.FC = () => {
             transition: 'all 0.2s',
           }}
         >
-          {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+          {saving ? 'Đang lưu...' : (
+            <><Check size={14} /> Lưu thay đổi</>
+          )}
         </button>
       </SectionCard>
 
+      {/* Non-editable account info */}
       <SectionCard title="Thông tin tài khoản" subtitle="Thông tin không thể thay đổi">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-            <div>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>Email đăng nhập</p>
-              <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600 }}>{reduxProfile?.email}</p>
+          {[
+            { label: 'Email đăng nhập', value: reduxProfile?.email, badge: 'ĐÃ XÁC NHẬN' },
+            { label: 'Vai trò', value: reduxProfile?.role === 'ADMIN' ? 'Quản trị viên' : 'Khách hàng' },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>{item.label}</p>
+                <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600 }}>{item.value}</p>
+              </div>
+              {item.badge && <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.06em' }}>{item.badge}</span>}
             </div>
-            <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 700, letterSpacing: '0.06em' }}>ĐÃ XÁC NHẬN</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-            <div>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>Vai trò</p>
-              <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600 }}>{reduxProfile?.role === 'ADMIN' ? 'Quản trị viên' : 'Khách hàng'}</p>
-            </div>
-          </div>
+          ))}
         </div>
       </SectionCard>
     </div>
@@ -333,14 +411,15 @@ const ProfileTab: React.FC = () => {
 
 // ─── Tab: Orders ──────────────────────────────────────────────────────────────
 
-const OrdersTab: React.FC = () => {
-  const { orders, ordersLoading } = useAccount();
+const OrdersTab: React.FC<{ orders: Order[]; ordersLoading: boolean }> = ({ orders, ordersLoading }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (ordersLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {[0,1,2].map(i => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 'var(--radius-lg)' }} />)}
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="skeleton" style={{ height: 80, borderRadius: 'var(--radius-lg)' }} />
+        ))}
       </div>
     );
   }
@@ -362,15 +441,11 @@ const OrdersTab: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {orders.map(order => {
+      {orders.map((order) => {
         const isExpanded = expandedId === order.id;
         return (
           <div key={order.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden', transition: 'border-color 0.2s' }}>
-            {/* Order header */}
-            <div
-              onClick={() => setExpandedId(isExpanded ? null : order.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', cursor: 'pointer' }}
-            >
+            <div onClick={() => setExpandedId(isExpanded ? null : order.id)} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', cursor: 'pointer' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5, flexWrap: 'wrap' }}>
                   <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
@@ -389,7 +464,6 @@ const OrdersTab: React.FC = () => {
               <ChevronRight size={16} style={{ color: 'var(--text-muted)', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
             </div>
 
-            {/* Order details */}
             {isExpanded && (
               <div style={{ borderTop: '1px solid var(--border)', padding: '18px 22px' }}>
                 {order.shippingAddr && (
@@ -402,13 +476,9 @@ const OrdersTab: React.FC = () => {
                   </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {order.orderItems.map(item => (
+                  {order.orderItems.map((item) => (
                     <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <img
-                        src={item.product?.imgUrl}
-                        alt={item.product?.title}
-                        style={{ width: 48, height: 48, borderRadius: 'var(--radius-sm)', objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }}
-                      />
+                      <img src={item.product?.imgUrl} alt={item.product?.title} style={{ width: 48, height: 48, borderRadius: 'var(--radius-sm)', objectFit: 'cover', border: '1px solid var(--border)', flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {item.product?.title || `Sản phẩm #${item.productId}`}
@@ -434,207 +504,6 @@ const OrdersTab: React.FC = () => {
   );
 };
 
-// ─── Tab: Addresses ───────────────────────────────────────────────────────────
-
-const LABEL_ICONS: Record<string, React.ReactNode> = {
-  'Nhà riêng': <Home size={14} />,
-  'Văn phòng': <Briefcase size={14} />,
-};
-
-const AddressCard: React.FC<{
-  addr: SavedAddress;
-  onEdit: () => void;
-  onDelete: () => void;
-  onSetDefault: () => void;
-}> = ({ addr, onEdit, onDelete, onSetDefault }) => (
-  <div style={{
-    border: `1.5px solid ${addr.isDefault ? 'var(--accent)' : 'var(--border)'}`,
-    borderRadius: 'var(--radius-lg)',
-    padding: '18px 20px',
-    background: addr.isDefault ? 'var(--accent-soft)' : 'var(--bg-card)',
-    position: 'relative',
-    transition: 'border-color 0.2s',
-  }}>
-    {addr.isDefault && (
-      <div style={{ position: 'absolute', top: 14, right: 14 }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', padding: '3px 9px', borderRadius: 'var(--radius-full)', border: '1px solid rgba(29,185,84,0.3)' }}>
-          <Star size={10} fill="currentColor" /> Mặc định
-        </span>
-      </div>
-    )}
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <span style={{ color: 'var(--text-muted)' }}>{LABEL_ICONS[addr.label] || <MapPin size={14} />}</span>
-      <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{addr.label}</span>
-    </div>
-    <p style={{ fontSize: 14, color: 'var(--text-primary)', fontWeight: 600, marginBottom: 4 }}>{addr.fullName}</p>
-    <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 3 }}>{addr.phone}</p>
-    <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>{addr.address}, {addr.city}</p>
-    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-      {!addr.isDefault && (
-        <button onClick={onSetDefault} style={{ fontSize: 11, color: 'var(--accent)', background: 'none', border: '1px solid var(--accent)', borderRadius: 'var(--radius-full)', padding: '4px 12px', cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)' }}>
-          Đặt mặc định
-        </button>
-      )}
-      <button onClick={onEdit} style={{ fontSize: 11, color: 'var(--text-secondary)', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-full)', padding: '4px 12px', cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 4 }}>
-        <Edit2 size={11} /> Sửa
-      </button>
-      <button onClick={onDelete} style={{ fontSize: 11, color: 'var(--warm-rose)', background: 'none', border: '1px solid rgba(244,63,94,0.3)', borderRadius: 'var(--radius-full)', padding: '4px 12px', cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 4 }}>
-        <Trash2 size={11} /> Xóa
-      </button>
-    </div>
-  </div>
-);
-
-const AddressForm: React.FC<{
-  initial?: Partial<SavedAddress>;
-  onSave: (data: Omit<SavedAddress, 'id'>) => void;
-  onCancel: () => void;
-}> = ({ initial, onSave, onCancel }) => {
-  const [form, setForm] = useState({
-    label: initial?.label || 'Nhà riêng',
-    fullName: initial?.fullName || '',
-    phone: initial?.phone || '',
-    address: initial?.address || '',
-    city: initial?.city || '',
-    isDefault: initial?.isDefault || false,
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }));
-
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!form.fullName.trim()) e.fullName = 'Nhập họ tên';
-    if (!form.phone.trim()) e.phone = 'Nhập số điện thoại';
-    if (!form.address.trim()) e.address = 'Nhập địa chỉ';
-    if (!form.city.trim()) e.city = 'Nhập thành phố';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (!validate()) return;
-    onSave(form);
-  };
-
-  return (
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '22px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 7 }}>Nhãn địa chỉ</label>
-          <select value={form.label} onChange={e => set('label', e.target.value)} style={{ width: '100%', background: 'var(--bg-card)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '11px 14px', fontSize: 14, color: 'var(--text-primary)', outline: 'none', fontFamily: 'var(--font-sans)' }}>
-            <option>Nhà riêng</option>
-            <option>Văn phòng</option>
-            <option>Khác</option>
-          </select>
-        </div>
-        <FormField label="Họ và tên" value={form.fullName} onChange={v => set('fullName', v)} placeholder="Nguyễn Văn A" error={errors.fullName} />
-        <FormField label="Số điện thoại" value={form.phone} onChange={v => set('phone', v)} placeholder="0901234567" error={errors.phone} />
-        <FormField label="Thành phố" value={form.city} onChange={v => set('city', v)} placeholder="TP.HCM" error={errors.city} />
-        <div style={{ gridColumn: '1 / -1' }}>
-          <FormField label="Địa chỉ" value={form.address} onChange={v => set('address', v)} placeholder="123 Đường ABC, Quận 1" error={errors.address} />
-        </div>
-      </div>
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 16 }}>
-        <input type="checkbox" checked={form.isDefault} onChange={e => set('isDefault', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Đặt làm địa chỉ mặc định</span>
-      </label>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={handleSubmit} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius-full)', padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-          <Check size={14} /> Lưu địa chỉ
-        </button>
-        <button onClick={onCancel} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-full)', padding: '10px 20px', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-          <X size={14} /> Hủy
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const AddressesTab: React.FC = () => {
-  const { addresses, addAddress, updateAddress, deleteAddress, setDefaultAddress } = useAccount();
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-
-  const handleSave = (data: Omit<SavedAddress, 'id'>) => {
-    if (editingId) {
-      updateAddress(editingId, data);
-      setEditingId(null);
-    } else {
-      addAddress(data);
-      setShowForm(false);
-    }
-  };
-
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: 'var(--text-primary)' }}>Địa chỉ giao hàng</h2>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>Quản lý các địa chỉ giao hàng của bạn</p>
-        </div>
-        {!showForm && !editingId && (
-          <button onClick={() => setShowForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius-full)', padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-            <Plus size={15} /> Thêm địa chỉ
-          </button>
-        )}
-      </div>
-
-      {showForm && !editingId && (
-        <div style={{ marginBottom: 20 }}>
-          <AddressForm onSave={handleSave} onCancel={() => setShowForm(false)} />
-        </div>
-      )}
-
-      {addresses.length === 0 && !showForm ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', border: '1px dashed var(--border)', borderRadius: 'var(--radius-xl)' }}>
-          <MapPin size={42} style={{ color: 'var(--text-muted)', marginBottom: 14 }} strokeWidth={1} />
-          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>Chưa có địa chỉ nào</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18 }}>Thêm địa chỉ để thanh toán nhanh hơn</p>
-          <button onClick={() => setShowForm(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius-full)', padding: '11px 22px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
-            <Plus size={15} /> Thêm địa chỉ đầu tiên
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-          {addresses.map(addr => (
-            <div key={addr.id}>
-              {editingId === addr.id ? (
-                <AddressForm initial={addr} onSave={handleSave} onCancel={() => setEditingId(null)} />
-              ) : (
-                <AddressCard
-                  addr={addr}
-                  onEdit={() => setEditingId(addr.id)}
-                  onDelete={() => setDeleteConfirmId(addr.id)}
-                  onSetDefault={() => setDefaultAddress(addr.id)}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Delete confirm */}
-      {deleteConfirmId && (
-        <div onClick={() => setDeleteConfirmId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-xl)', padding: '32px 28px', maxWidth: 340, width: '100%', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xl)', textAlign: 'center' }}>
-            <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(244,63,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <Trash2 size={22} style={{ color: 'var(--warm-rose)' }} />
-            </div>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Xóa địa chỉ?</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>Hành động này không thể hoàn tác.</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '11px', borderRadius: 'var(--radius-full)', background: 'var(--bg-secondary)', border: '1px solid var(--border)', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>Hủy</button>
-              <button onClick={() => { deleteAddress(deleteConfirmId); setDeleteConfirmId(null); }} style={{ flex: 1, padding: '11px', borderRadius: 'var(--radius-full)', background: 'var(--warm-rose)', border: 'none', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>Xóa</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ─── Tab: Security ────────────────────────────────────────────────────────────
 
 const SecurityTab: React.FC = () => {
@@ -649,7 +518,7 @@ const SecurityTab: React.FC = () => {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!current) e.current = 'Nhập mật khẩu hiện tại';
-    if (!next || next.length < 8) e.next = 'Mật khẩu mới ít nhất 8 ký tự';
+    if (!next || next.length < 6) e.next = 'Mật khẩu mới ít nhất 6 ký tự';
     if (next !== confirm) e.confirm = 'Mật khẩu xác nhận không khớp';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -658,10 +527,18 @@ const SecurityTab: React.FC = () => {
   const handleSave = async () => {
     if (!validate()) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 800));
-    toast.success('Mật khẩu đã được thay đổi');
-    setCurrent(''); setNext(''); setConfirm('');
-    setSaving(false);
+    try {
+      await api.put('/auth/password', {
+        currentPassword: current,
+        newPassword: next,
+      });
+      toast.success('Mật khẩu đã được thay đổi');
+      setCurrent(''); setNext(''); setConfirm('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Lỗi khi đổi mật khẩu');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const EyeToggle: React.FC<{ show: boolean; toggle: () => void }> = ({ show, toggle }) => (
@@ -673,8 +550,8 @@ const SecurityTab: React.FC = () => {
   return (
     <SectionCard title="Đổi mật khẩu" subtitle="Để bảo mật, hãy dùng mật khẩu mạnh">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 420 }}>
-        <FormField label="Mật khẩu hiện tại" value={current} onChange={setCurrent} type={showCurrent ? 'text' : 'password'} placeholder="••••••••" error={errors.current} suffix={<EyeToggle show={showCurrent} toggle={() => setShowCurrent(s => !s)} />} />
-        <FormField label="Mật khẩu mới" value={next} onChange={setNext} type={showNext ? 'text' : 'password'} placeholder="Tối thiểu 8 ký tự" error={errors.next} suffix={<EyeToggle show={showNext} toggle={() => setShowNext(s => !s)} />} />
+        <FormField label="Mật khẩu hiện tại" value={current} onChange={setCurrent} type={showCurrent ? 'text' : 'password'} placeholder="••••••••" error={errors.current} suffix={<EyeToggle show={showCurrent} toggle={() => setShowCurrent((s) => !s)} />} />
+        <FormField label="Mật khẩu mới" value={next} onChange={setNext} type={showNext ? 'text' : 'password'} placeholder="Tối thiểu 6 ký tự" error={errors.next} suffix={<EyeToggle show={showNext} toggle={() => setShowNext((s) => !s)} />} />
         <FormField label="Xác nhận mật khẩu mới" value={confirm} onChange={setConfirm} type="password" placeholder="••••••••" error={errors.confirm} />
 
         {next && (
@@ -700,14 +577,7 @@ const SettingsTab: React.FC = () => {
   const [notifyPromos, setNotifyPromos] = useState(false);
 
   const Toggle: React.FC<{ value: boolean; onChange: (v: boolean) => void }> = ({ value, onChange }) => (
-    <button
-      onClick={() => onChange(!value)}
-      style={{
-        width: 44, height: 24, borderRadius: 12,
-        background: value ? 'var(--accent)' : 'var(--border)',
-        border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-      }}
-    >
+    <button onClick={() => onChange(!value)} style={{ width: 44, height: 24, borderRadius: 12, background: value ? 'var(--accent)' : 'var(--border)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
       <div style={{ position: 'absolute', top: 3, left: value ? 22 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left 0.2s' }} />
     </button>
   );
@@ -732,7 +602,7 @@ const SettingsTab: React.FC = () => {
   );
 };
 
-// ─── Login/Register UI ────────────────────────────────────────────────────────
+// ─── Auth Page ────────────────────────────────────────────────────────────────
 
 const AuthPage: React.FC = () => {
   const dispatch = useDispatch();
@@ -761,11 +631,35 @@ const AuthPage: React.FC = () => {
     try {
       if (isLogin) {
         const res: any = await api.post('/auth/login', { email, password });
+        const u = res.user;
+
+        // Persist full profile to localStorage
         localStorage.setItem('token', res.token);
-        localStorage.setItem('user', JSON.stringify({ name: res.user.fullName || 'Khách hàng', email: res.user.email, role: res.user.role }));
-        dispatch(login({ name: res.user.fullName || 'Khách hàng', email: res.user.email, role: res.user.role }));
+        localStorage.setItem(
+          'user',
+          JSON.stringify({
+            id: u.id,
+            name: u.fullName || 'Khách hàng',
+            email: u.email,
+            phone: u.phone || '',
+            address: u.address || '',
+            role: u.role,
+          }),
+        );
+
+        dispatch(
+          login({
+            id: u.id,
+            name: u.fullName || 'Khách hàng',
+            email: u.email,
+            phone: u.phone || '',
+            address: u.address || '',
+            role: u.role,
+          }),
+        );
+
         toast.success('Đăng nhập thành công');
-        if (res.user.role?.toUpperCase() === 'ADMIN') navigate('/admin');
+        if (u.role?.toUpperCase() === 'ADMIN') navigate('/admin');
       } else {
         await api.post('/auth/register', { email, password, fullName: name });
         toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
@@ -782,7 +676,6 @@ const AuthPage: React.FC = () => {
   return (
     <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', background: 'var(--bg-primary)' }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: 'var(--shadow-accent)' }}>
             <UserIcon size={24} color="#000" />
@@ -795,15 +688,20 @@ const AuthPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {!isLogin && (
             <FormField label="Họ và tên" value={name} onChange={setName} placeholder="Nguyễn Văn A" error={errors.name} />
           )}
           <FormField label="Email" value={email} onChange={setEmail} type="email" placeholder="email@example.com" error={errors.email} />
-          <FormField label="Mật khẩu" value={password} onChange={setPassword} type={showPw ? 'text' : 'password'} placeholder="••••••••" error={errors.password}
+          <FormField
+            label="Mật khẩu"
+            value={password}
+            onChange={setPassword}
+            type={showPw ? 'text' : 'password'}
+            placeholder="••••••••"
+            error={errors.password}
             suffix={
-              <button type="button" onClick={() => setShowPw(s => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}>
+              <button type="button" onClick={() => setShowPw((s) => !s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}>
                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             }
@@ -812,36 +710,17 @@ const AuthPage: React.FC = () => {
           <button
             type="submit"
             disabled={submitting}
-            style={{
-              marginTop: 4,
-              width: '100%',
-              padding: '14px',
-              background: 'var(--accent)',
-              color: '#000',
-              border: 'none',
-              borderRadius: 'var(--radius-full)',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              opacity: submitting ? 0.7 : 1,
-              fontFamily: 'var(--font-sans)',
-              boxShadow: 'var(--shadow-accent)',
-              transition: 'all 0.2s',
-            }}
+            style={{ marginTop: 4, width: '100%', padding: '14px', background: 'var(--accent)', color: '#000', border: 'none', borderRadius: 'var(--radius-full)', fontSize: 14, fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1, fontFamily: 'var(--font-sans)', boxShadow: 'var(--shadow-accent)', transition: 'all 0.2s' }}
           >
-            {submitting ? 'Đang xử lý...' : (isLogin ? 'Đăng nhập' : 'Tạo tài khoản')}
+            {submitting ? 'Đang xử lý...' : isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
           </button>
         </form>
 
-        {/* Toggle */}
         <div style={{ textAlign: 'center', marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10 }}>
             {isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}
           </p>
-          <button
-            onClick={() => { setIsLogin(l => !l); setErrors({}); }}
-            style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
-          >
+          <button onClick={() => { setIsLogin((l) => !l); setErrors({}); }} style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
             {isLogin ? 'Đăng ký ngay →' : '← Quay lại đăng nhập'}
           </button>
         </div>
@@ -853,12 +732,11 @@ const AuthPage: React.FC = () => {
 // ─── Main User Page ───────────────────────────────────────────────────────────
 
 const NAV_ITEMS: { tab: Tab; label: string; icon: React.ReactNode }[] = [
-  { tab: 'overview',   label: 'Tổng quan',       icon: <LayoutDashboard size={17} /> },
-  { tab: 'profile',    label: 'Thông tin',        icon: <UserIcon size={17} /> },
-  { tab: 'orders',     label: 'Đơn hàng',         icon: <Package size={17} /> },
-  { tab: 'addresses',  label: 'Địa chỉ',          icon: <MapPin size={17} /> },
-  { tab: 'security',   label: 'Bảo mật',          icon: <Lock size={17} /> },
-  { tab: 'settings',   label: 'Cài đặt',          icon: <Settings size={17} /> },
+  { tab: 'overview',  label: 'Tổng quan',     icon: <LayoutDashboard size={17} /> },
+  { tab: 'profile',   label: 'Thông tin',      icon: <UserIcon size={17} /> },
+  { tab: 'orders',    label: 'Đơn hàng',       icon: <Package size={17} /> },
+  { tab: 'security',  label: 'Bảo mật',        icon: <Lock size={17} /> },
+  { tab: 'settings',  label: 'Cài đặt',        icon: <Settings size={17} /> },
 ];
 
 const User: React.FC = () => {
@@ -866,12 +744,13 @@ const User: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, orders } = useAccount();
 
-  // Parse tab from URL query
   const searchParams = new URLSearchParams(location.search);
   const urlTab = searchParams.get('tab') as Tab | null;
   const [tab, setTabState] = useState<Tab>(urlTab || 'overview');
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const setTab = (t: Tab) => {
     setTabState(t);
@@ -882,9 +761,30 @@ const User: React.FC = () => {
     if (urlTab && urlTab !== tab) setTabState(urlTab);
   }, [urlTab]);
 
+  const fetchOrders = useCallback(async () => {
+    if (!isLoggedIn) return;
+    setOrdersLoading(true);
+    try {
+      const data = (await api.get('/orders/my-orders')) as Order[];
+      setOrders(data);
+    } catch {
+      // silently fail
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn) fetchOrders();
+    else setOrders([]);
+  }, [isLoggedIn, fetchOrders]);
+
   if (!isLoggedIn || !reduxProfile) return <AuthPage />;
 
-  const pendingCount = orders.filter(o => o.status === 'PENDING' || o.status === 'PROCESSING').length;
+  const pendingCount = orders.filter(
+    (o) => o.status === 'PENDING' || o.status === 'PROCESSING',
+  ).length;
+  const initials = (reduxProfile.name || 'U').charAt(0).toUpperCase();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -903,10 +803,10 @@ const User: React.FC = () => {
             {/* Profile card */}
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '22px', marginBottom: 12, textAlign: 'center' }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', margin: '0 auto 12px', boxShadow: 'var(--shadow-accent)' }}>
-                {profile?.avatarInitials || 'U'}
+                {initials}
               </div>
-              <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.fullName || 'Khách hàng'}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{profile?.email}</p>
+              <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{reduxProfile.name || 'Khách hàng'}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{reduxProfile.email}</p>
               {reduxProfile?.role?.toUpperCase() === 'ADMIN' && (
                 <div style={{ marginTop: 10 }}>
                   <button onClick={() => navigate('/admin')} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', border: '1px solid rgba(29,185,84,0.3)', borderRadius: 'var(--radius-full)', padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>
@@ -921,28 +821,9 @@ const User: React.FC = () => {
               {NAV_ITEMS.map((item, i) => {
                 const isActive = tab === item.tab;
                 return (
-                  <button
-                    key={item.tab}
-                    onClick={() => setTab(item.tab)}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '13px 18px',
-                      background: isActive ? 'var(--accent-soft)' : 'none',
-                      border: 'none',
-                      borderBottom: i < NAV_ITEMS.length - 1 ? '1px solid var(--border)' : 'none',
-                      cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)',
-                      fontSize: 13,
-                      fontWeight: isActive ? 700 : 500,
-                      color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                      transition: 'all 0.15s',
-                      textAlign: 'left',
-                    }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'none'; }}
+                  <button key={item.tab} onClick={() => setTab(item.tab)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 18px', background: isActive ? 'var(--accent-soft)' : 'none', border: 'none', borderBottom: i < NAV_ITEMS.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: isActive ? 700 : 500, color: isActive ? 'var(--accent)' : 'var(--text-secondary)', transition: 'all 0.15s', textAlign: 'left' }}
+                    onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--bg-secondary)'; }}
+                    onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'none'; }}
                   >
                     <span style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)', flexShrink: 0 }}>{item.icon}</span>
                     <span style={{ flex: 1 }}>{item.label}</span>
@@ -955,27 +836,9 @@ const User: React.FC = () => {
               })}
 
               {/* Logout */}
-              <button
-                onClick={handleLogout}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '13px 18px',
-                  background: 'none',
-                  border: 'none',
-                  borderTop: '1px solid var(--border)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-sans)',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: 'var(--warm-rose)',
-                  transition: 'all 0.15s',
-                  textAlign: 'left',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(244,63,94,0.06)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 18px', background: 'none', border: 'none', borderTop: '1px solid var(--border)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--warm-rose)', transition: 'all 0.15s', textAlign: 'left' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(244,63,94,0.06)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
               >
                 <LogOut size={17} style={{ flexShrink: 0 }} />
                 Đăng xuất
@@ -985,12 +848,11 @@ const User: React.FC = () => {
 
           {/* Main content */}
           <main style={{ minWidth: 0 }}>
-            {tab === 'overview'  && <OverviewTab setTab={setTab} />}
-            {tab === 'profile'   && <ProfileTab />}
-            {tab === 'orders'    && <OrdersTab />}
-            {tab === 'addresses' && <AddressesTab />}
-            {tab === 'security'  && <SecurityTab />}
-            {tab === 'settings'  && <SettingsTab />}
+            {tab === 'overview' && <OverviewTab orders={orders} ordersLoading={ordersLoading} setTab={setTab} />}
+            {tab === 'profile'  && <ProfileTab />}
+            {tab === 'orders'   && <OrdersTab orders={orders} ordersLoading={ordersLoading} />}
+            {tab === 'security' && <SecurityTab />}
+            {tab === 'settings' && <SettingsTab />}
           </main>
         </div>
       </div>
@@ -1001,10 +863,6 @@ const User: React.FC = () => {
             grid-template-columns: 1fr !important;
           }
           aside { position: static !important; }
-        }
-        @media (max-width: 640px) {
-          aside nav { display: flex; overflow-x: auto; border-radius: var(--radius-lg) !important; }
-          aside nav button { flex-shrink: 0; border-bottom: none !important; border-right: 1px solid var(--border); min-width: 120px; }
         }
       `}</style>
     </div>

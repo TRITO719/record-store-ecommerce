@@ -34,16 +34,23 @@ const App: React.FC = () => {
   React.useEffect(() => {
     dispatch(fetchProducts());
 
-    // Restore auth state từ localStorage sau khi refresh trang.
-    // Token vẫn còn trong localStorage → khôi phục lại Redux user state.
+    // Restore full auth state from localStorage after page refresh.
     const token = localStorage.getItem('token');
     const userRaw = localStorage.getItem('user');
     if (token && userRaw) {
       try {
         const user = JSON.parse(userRaw);
-        dispatch(login({ name: user.name, email: user.email, role: user.role }));
+        dispatch(
+          login({
+            id: user.id,
+            name: user.name || user.fullName || '',
+            email: user.email,
+            phone: user.phone || '',
+            address: user.address || '',
+            role: user.role,
+          }),
+        );
       } catch {
-        // localStorage bị corrupt → xóa để tránh lỗi
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
@@ -68,7 +75,6 @@ const App: React.FC = () => {
           <Route path="faq" element={<FAQ />} />
           <Route path="order-success" element={<OrderSuccess />} />
           <Route path="account" element={<User />} />
-          
         </Route>
 
         <Route
