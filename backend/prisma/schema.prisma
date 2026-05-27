@@ -7,14 +7,27 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  fullName  String?
-  password  String
-  role      String   @default("USER") // USER, ADMIN
+  id         String   @id @default(uuid())
+  email      String   @unique
+  fullName   String?
+  phone      String?
+  address    String?
+  password   String
+  role       String   @default("USER") // USER, ADMIN
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  orders     Order[]
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String
+  code      String   // bcrypt hash of 6-digit OTP
+  expiresAt DateTime // now() + 5 minutes
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+
+  @@index([email])
 }
 
 model Product {

@@ -7,4 +7,20 @@ export const authRepository = {
     prisma.user.create({
       data: { email, password: hashedPassword, fullName },
     }),
+  updateUser: (id: string, data: { fullName?: string; phone?: string; address?: string }) =>
+    prisma.user.update({
+      where: { id },
+      data,
+    }),
+  updatePassword: (id: string, hashedPassword: string) =>
+    prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    }),
+  /** Mark user as email-verified after successful OTP confirmation. */
+  verifyUser: (email: string) =>
+    prisma.user.update({
+      where: { email },
+      data: { isVerified: true },
+    }),
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -18,6 +18,9 @@ import {
   Check,
   LayoutDashboard,
   MapPin,
+  Mail,
+  RefreshCw,
+  Shield,
 } from 'lucide-react';
 import { login, logout, updateProfile as updateReduxProfile } from '../store/userSlice';
 import type { RootState } from '../store';
@@ -518,7 +521,7 @@ const SecurityTab: React.FC = () => {
   const validate = () => {
     const e: Record<string, string> = {};
     if (!current) e.current = 'Nhập mật khẩu hiện tại';
-    if (!next || next.length < 6) e.next = 'Mật khẩu mới ít nhất 6 ký tự';
+    if (!next || next.length < 8) e.next = 'Mật khẩu mới ít nhất 8 ký tự';
     if (next !== confirm) e.confirm = 'Mật khẩu xác nhận không khớp';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -602,6 +605,249 @@ const SettingsTab: React.FC = () => {
   );
 };
 
+// ─── OTP Verification Component ───────────────────────────────────────────────
+
+const maskEmail = (email: string): string => {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return email;
+  if (local.length <= 2) return `${local[0]}***@${domain}`;
+  return `${local[0]}${local[1]}${'*'.repeat(Math.min(local.length - 2, 6))}@${domain}`;
+};
+
+const OtpVerification: React.FC<{
+  email: string;
+  onVerified: (data: { token: string; user: any }) => void;
+  onBack: () => void;
+}> = ({ email, onVerified, onBack }) => {
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const [error, setError] = useState('');
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => setCountdown((c) => c - 1), 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  const handleChange = (index: number, value: string) => {
+    // Only allow digits
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
+    setError('');
+
+    // Auto-focus next input
+    if (digit && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pasted.length === 6) {
+      setOtp(pasted.split(''));
+      inputRefs.current[5]?.focus();
+    }
+  };
+
+  const handleVerify = async () => {
+    const code = otp.join('');
+    if (code.length !== 6) {
+      setError('Vui lòng nhập đủ 6 chữ số');
+      return;
+    }
+    setVerifying(true);
+    setError('');
+    try {
+      const res: any = await api.post('/auth/verify-otp', { email, code });
+      toast.success('Xác thực thành công!');
+      onVerified({ token: res.token, user: res.user });
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Mã OTP không chính xác');
+      setOtp(Array(6).fill(''));
+      inputRefs.current[0]?.focus();
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (countdown > 0 || resending) return;
+    setResending(true);
+    setError('');
+    try {
+      await api.post('/auth/resend-otp', { email });
+      toast.success('Mã OTP mới đã được gửi');
+      setCountdown(60);
+      setOtp(Array(6).fill(''));
+      inputRefs.current[0]?.focus();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể gửi lại OTP');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // Auto-submit when all 6 digits entered
+  useEffect(() => {
+    if (otp.every((d) => d !== '') && otp.join('').length === 6) {
+      handleVerify();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otp]);
+
+  return (
+    <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', background: 'var(--bg-primary)' }}>
+      <div style={{ width: '100%', maxWidth: 420 }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(29,185,84,0.15) 0%, rgba(139,92,246,0.1) 100%)',
+            border: '2px solid rgba(29,185,84,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <Shield size={28} style={{ color: 'var(--accent)' }} />
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 26, color: 'var(--text-primary)', marginBottom: 8 }}>
+            Xác thực email
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            Chúng tôi đã gửi mã xác thực 6 số đến
+          </p>
+          <p style={{
+            fontSize: 14, fontWeight: 700, color: 'var(--accent)',
+            display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 4,
+          }}>
+            <Mail size={14} /> {maskEmail(email)}
+          </p>
+        </div>
+
+        {/* OTP Inputs */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 20 }} onPaste={handlePaste}>
+          {otp.map((digit, i) => (
+            <input
+              key={i}
+              ref={(el) => { inputRefs.current[i] = el; }}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleChange(i, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+              onFocus={(e) => e.target.select()}
+              style={{
+                width: 50, height: 58,
+                textAlign: 'center',
+                fontSize: 22, fontWeight: 800,
+                fontFamily: "'Courier New', monospace",
+                color: 'var(--text-primary)',
+                background: digit ? 'rgba(29,185,84,0.06)' : 'var(--bg-card)',
+                border: `2px solid ${error ? 'var(--warm-rose)' : digit ? 'var(--accent)' : 'var(--border)'}`,
+                borderRadius: 'var(--radius-lg)',
+                outline: 'none',
+                transition: 'all 0.2s',
+                caretColor: 'var(--accent)',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 14px', marginBottom: 16,
+            background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)',
+            borderRadius: 'var(--radius-md)',
+          }}>
+            <AlertCircle size={14} style={{ color: 'var(--warm-rose)', flexShrink: 0 }} />
+            <p style={{ fontSize: 12, color: 'var(--warm-rose)', fontWeight: 500 }}>{error}</p>
+          </div>
+        )}
+
+        {/* Verify button */}
+        <button
+          onClick={handleVerify}
+          disabled={verifying || otp.some((d) => !d)}
+          style={{
+            width: '100%', padding: '14px',
+            background: otp.every((d) => d) ? 'var(--accent)' : 'var(--border)',
+            color: otp.every((d) => d) ? '#000' : 'var(--text-muted)',
+            border: 'none', borderRadius: 'var(--radius-full)',
+            fontSize: 14, fontWeight: 700,
+            cursor: verifying || otp.some((d) => !d) ? 'not-allowed' : 'pointer',
+            opacity: verifying ? 0.7 : 1,
+            fontFamily: 'var(--font-sans)',
+            boxShadow: otp.every((d) => d) ? 'var(--shadow-accent)' : 'none',
+            transition: 'all 0.3s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          {verifying ? (
+            <><RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} /> Đang xác thực...</>
+          ) : (
+            <><CheckCircle size={14} /> Xác nhận</>
+          )}
+        </button>
+
+        {/* Resend */}
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          {countdown > 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              Gửi lại mã sau <span style={{ color: 'var(--accent)', fontWeight: 700, fontFamily: "'Courier New', monospace" }}>
+                {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}
+              </span>
+            </p>
+          ) : (
+            <button
+              onClick={handleResend}
+              disabled={resending}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, fontWeight: 600, color: 'var(--accent)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontFamily: 'var(--font-sans)',
+                opacity: resending ? 0.6 : 1,
+              }}
+            >
+              <RefreshCw size={13} style={resending ? { animation: 'spin 1s linear infinite' } : undefined} />
+              {resending ? 'Đang gửi...' : 'Gửi lại mã OTP'}
+            </button>
+          )}
+        </div>
+
+        {/* Back */}
+        <div style={{ textAlign: 'center', marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+          <button
+            onClick={onBack}
+            style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
+          >
+            ← Quay lại đăng nhập
+          </button>
+        </div>
+
+        {/* Spin animation */}
+        <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+      </div>
+    </div>
+  );
+};
+
 // ─── Auth Page ────────────────────────────────────────────────────────────────
 
 const AuthPage: React.FC = () => {
@@ -615,11 +861,15 @@ const AuthPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // OTP step
+  const [otpStep, setOtpStep] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!isLogin && !name.trim()) e.name = 'Nhập họ tên';
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email không hợp lệ';
-    if (!password || password.length < 6) e.password = 'Mật khẩu ít nhất 6 ký tự';
+    if (!password || password.length < 8) e.password = 'Mật khẩu ít nhất 8 ký tự';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -662,16 +912,70 @@ const AuthPage: React.FC = () => {
         if (u.role?.toUpperCase() === 'ADMIN') navigate('/admin');
       } else {
         await api.post('/auth/register', { email, password, fullName: name });
-        toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
-        setIsLogin(true);
-        setPassword('');
+        toast.success('Vui lòng kiểm tra email để lấy mã OTP!');
+        setOtpEmail(email);
+        setOtpStep(true);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      // Handle unverified account — redirect to OTP screen
+      if (error.response?.status === 403 && error.response?.data?.requireOtp) {
+        const unverifiedEmail = error.response.data.email || email;
+        toast('Tài khoản chưa xác thực. Vui lòng nhập mã OTP.', { icon: '🔒' });
+        setOtpEmail(unverifiedEmail);
+        setOtpStep(true);
+        // Auto-resend OTP for convenience
+        try {
+          await api.post('/auth/resend-otp', { email: unverifiedEmail });
+          toast.success('Đã gửi lại mã OTP đến email của bạn');
+        } catch {
+          // Silently ignore resend error (might be in cooldown)
+        }
+      } else {
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Show OTP verification screen
+  if (otpStep) {
+    return (
+      <OtpVerification
+        email={otpEmail}
+        onVerified={({ token, user: u }) => {
+          // Auto-login: persist token + user, dispatch Redux, navigate
+          localStorage.setItem('token', token);
+          localStorage.setItem(
+            'user',
+            JSON.stringify({
+              id: u.id,
+              name: u.fullName || 'Khách hàng',
+              email: u.email,
+              phone: u.phone || '',
+              address: u.address || '',
+              role: u.role,
+            }),
+          );
+          dispatch(
+            login({
+              id: u.id,
+              name: u.fullName || 'Khách hàng',
+              email: u.email,
+              phone: u.phone || '',
+              address: u.address || '',
+              role: u.role,
+            }),
+          );
+          if (u.role?.toUpperCase() === 'ADMIN') navigate('/admin');
+        }}
+        onBack={() => {
+          setOtpStep(false);
+          setIsLogin(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', background: 'var(--bg-primary)' }}>
