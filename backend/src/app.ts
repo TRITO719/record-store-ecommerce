@@ -6,6 +6,7 @@ import { productRoutes } from './modules/products/product.routes';
 import { orderRoutes } from './modules/orders/order.routes';
 import { adminRoutes } from './modules/admin/admin.routes';
 import { statisticsRoutes } from './modules/statistics/statistics.routes';
+import chatRoutes from './modules/chat/chat.routes';
 import { verifyAdmin } from './middlewares/auth';
 import { upload } from './middlewares/upload';
 import { env } from './config/env';
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Statistics routes — protected by verifyAdmin inside the adminRoutes prefix
 app.use('/api/admin/statistics', verifyAdmin, statisticsRoutes);
