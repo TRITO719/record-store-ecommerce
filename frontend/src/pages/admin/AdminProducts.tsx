@@ -162,42 +162,44 @@ const AdminProducts: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 w-full max-w-md border border-rs-border">
-            <h2 className="text-xl font-bold uppercase tracking-widest mb-6 border-b border-rs-border pb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-sm border border-rs-border max-h-[85vh] flex flex-col">
+            <h2 className="text-lg font-bold uppercase tracking-widest px-6 pt-6 pb-4 border-b border-rs-border shrink-0">
               {editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" placeholder="Tên sản phẩm" required className="w-full border border-rs-border p-3 text-sm focus:outline-none focus:border-black" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-              <input type="text" placeholder="Nghệ sĩ" required className="w-full border border-rs-border p-3 text-sm focus:outline-none focus:border-black" value={formData.artist} onChange={e => setFormData({...formData, artist: e.target.value})} />
-              <div className="flex gap-4">
-                <input type="number" step="0.01" placeholder="Giá ($)" required className="w-1/2 border border-rs-border p-3 text-sm focus:outline-none focus:border-black" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
-                <input type="number" placeholder="Tồn kho" required className="w-1/2 border border-rs-border p-3 text-sm focus:outline-none focus:border-black" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
-              </div>
-              <textarea placeholder="Mô tả sản phẩm" className="w-full border border-rs-border p-3 text-sm focus:outline-none focus:border-black h-24" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-              
-              <div className="flex flex-col gap-3 bg-rs-gray-light p-4 border border-rs-border">
-                <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Hình ảnh sản phẩm</label>
-                <div className="flex items-center gap-4">
-                  <input type="file" accept="image/*" onChange={handleFileUpload} className="text-sm w-full file:mr-4 file:py-2 file:px-4 file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-black file:text-white hover:file:bg-zinc-800 cursor-pointer" disabled={isUploading} />
-                  {isUploading && <span className="text-[10px] uppercase tracking-widest text-gray-500 whitespace-nowrap">Đang tải...</span>}
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+                <input type="text" placeholder="Tên sản phẩm" required className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                <input type="text" placeholder="Nghệ sĩ" required className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.artist} onChange={e => setFormData({...formData, artist: e.target.value})} />
+                <div className="flex gap-3">
+                  <input type="number" step="0.01" placeholder="Giá ($)" required className="w-1/2 border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                  <input type="number" placeholder="Tồn kho" required className="w-1/2 border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
                 </div>
-                <input type="text" placeholder="Hoặc nhập URL Hình ảnh" required className="w-full border border-rs-border p-3 text-sm focus:outline-none focus:border-black bg-white" value={formData.imgUrl} onChange={e => setFormData({...formData, imgUrl: e.target.value})} />
-                {formData.imgUrl && (
-                  <div className="mt-2 w-24 h-24 border border-rs-border overflow-hidden bg-white">
-                    <img src={formData.imgUrl} alt="Preview" className="w-full h-full object-cover" />
+                <textarea placeholder="Mô tả sản phẩm" className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black h-20 resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                
+                <div className="flex flex-col gap-2 bg-rs-gray-light p-3 border border-rs-border">
+                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Hình ảnh sản phẩm</label>
+                  <div className="flex items-center gap-3">
+                    <input type="file" accept="image/*" onChange={handleFileUpload} className="text-xs w-full file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-black file:text-white hover:file:bg-zinc-800 cursor-pointer" disabled={isUploading} />
+                    {isUploading && <span className="text-[10px] uppercase tracking-widest text-gray-500 whitespace-nowrap">Đang tải...</span>}
                   </div>
-                )}
-              </div>
+                  <input type="text" placeholder="Hoặc nhập URL Hình ảnh" required className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black bg-white" value={formData.imgUrl} onChange={e => setFormData({...formData, imgUrl: e.target.value})} />
+                  {formData.imgUrl && (
+                    <div className="mt-1 w-16 h-16 border border-rs-border overflow-hidden bg-white">
+                      <img src={formData.imgUrl} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
 
-              <select className="w-full border border-rs-border p-3 text-sm focus:outline-none focus:border-black uppercase tracking-widest" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                <option value="vinyl">Vinyl</option>
-                <option value="cd">CD</option>
-                <option value="merch">Merch</option>
-              </select>
-              <div className="flex justify-end gap-4 mt-8">
-                <button type="button" onClick={handleCloseModal} className="px-5 py-3 text-[11px] font-bold uppercase tracking-widest border border-rs-border hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" className="px-5 py-3 text-[11px] font-bold uppercase tracking-widest bg-black text-white hover:bg-zinc-800 transition-colors">Lưu</button>
+                <select className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black uppercase tracking-widest" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                  <option value="vinyl">Vinyl</option>
+                  <option value="cd">CD</option>
+                  <option value="merch">Merch</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-rs-border shrink-0">
+                <button type="button" onClick={handleCloseModal} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest border border-rs-border hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest bg-black text-white hover:bg-zinc-800 transition-colors">Lưu</button>
               </div>
             </form>
           </div>

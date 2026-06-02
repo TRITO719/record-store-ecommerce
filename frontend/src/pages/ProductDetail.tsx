@@ -58,6 +58,7 @@ const ProductDetail: React.FC = () => {
     );
   }
 
+  const availableStock = maxAddable;
   const isOutOfStock = currentStock <= 0;
   const isAtMax = maxAddable <= 0 && !isOutOfStock;
 
@@ -162,7 +163,7 @@ const ProductDetail: React.FC = () => {
                 color: isOutOfStock ? 'var(--warm-rose)' : 'var(--accent)',
                 border: `1px solid ${isOutOfStock ? 'rgba(244,63,94,0.3)' : 'rgba(29,185,84,0.3)'}`,
               }}>
-                {isOutOfStock ? 'Out of Stock' : `${currentStock} in stock`}
+                {isOutOfStock ? 'Out of Stock' : `${availableStock} in stock`}
               </span>
             </div>
 

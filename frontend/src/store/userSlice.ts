@@ -19,11 +19,59 @@ interface UserState {
   adminProfile: UserProfile | null;
 }
 
+/**
+ * Restore user/admin session from localStorage so that a page refresh (F5)
+ * does NOT reset the Redux state to logged-out before the first render.
+ */
+const loadUserFromStorage = (): { isLoggedIn: boolean; profile: UserProfile | null } => {
+  try {
+    const token = localStorage.getItem('token');
+    const raw = localStorage.getItem('user');
+    if (!token || !raw) return { isLoggedIn: false, profile: null };
+    const user = JSON.parse(raw);
+    if (!user || !user.email) return { isLoggedIn: false, profile: null };
+    return {
+      isLoggedIn: true,
+      profile: {
+        id: user.id,
+        name: user.name || user.fullName || '',
+        email: user.email,
+        phone: user.phone || '',
+        address: user.address || '',
+        role: user.role || 'USER',
+      },
+    };
+  } catch {
+    return { isLoggedIn: false, profile: null };
+  }
+};
+
+const loadAdminFromStorage = (): { isAdminLoggedIn: boolean; adminProfile: UserProfile | null } => {
+  try {
+    const token = localStorage.getItem('admin_token');
+    const raw = localStorage.getItem('admin_user');
+    if (!token || !raw) return { isAdminLoggedIn: false, adminProfile: null };
+    const admin = JSON.parse(raw);
+    if (!admin || !admin.email) return { isAdminLoggedIn: false, adminProfile: null };
+    return {
+      isAdminLoggedIn: true,
+      adminProfile: {
+        id: admin.id,
+        name: admin.name || admin.fullName || '',
+        email: admin.email,
+        phone: admin.phone || '',
+        address: admin.address || '',
+        role: admin.role || 'ADMIN',
+      },
+    };
+  } catch {
+    return { isAdminLoggedIn: false, adminProfile: null };
+  }
+};
+
 const initialState: UserState = {
-  isLoggedIn: false,
-  profile: null,
-  isAdminLoggedIn: false,
-  adminProfile: null,
+  ...loadUserFromStorage(),
+  ...loadAdminFromStorage(),
 };
 
 const userSlice = createSlice({
