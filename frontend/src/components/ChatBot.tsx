@@ -1,4 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../store';
+import type { Product } from '../types';
+import { addToCart } from '../store/cartSlice';
 
 // ============================================================
 // TYPES
@@ -10,159 +14,62 @@ interface Message {
   timestamp: Date;
 }
 
-interface Product {
-  id: number;
-  title: string;
-  artist: string;
-  price: number;
-  imgUrl: string;
-  category: string;
-  stock: number;
-  description?: string;
+interface ChatAction {
+  type: 'add_to_cart';
+  product: Product;
+  quantity: number;
+}
+
+interface ChatApiResponse {
+  response: string;
+  actions?: ChatAction[];
+  role?: string;
 }
 
 // ============================================================
-// CHATBOT LOGIC (rule-based + AI-enhanced)
-// Tích hợp với dữ liệu thực từ API backend
+// CHATBOT LOGIC (DeepSeek V3.2 via Backend with Function Calling)
 // ============================================================
 
-const API_BASE = 'http://localhost:3000'; // đổi theo PORT backend
+const API_BASE = '/api'; // Sử dụng proxy hoặc đường dẫn tương đối
 
-async function fetchProducts(): Promise<Product[]> {
+async function getChatResponse(
+  message: string,
+  history: { role: string; content: string }[],
+  cartItems: any[]
+): Promise<ChatApiResponse> {
   try {
-    const res = await fetch(`${API_BASE}/api/products`);
-    if (!res.ok) return [];
-    return res.json();
-  } catch {
-    return [];
-  }
-}
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
 
-// Gọi Anthropic API (qua proxy - tích hợp vào backend)
-// Hoặc dùng rule-based nếu không có API key
-async function getAIResponse(
-  messages: { role: string; content: string }[],
-  products: Product[]
-): Promise<string> {
-  const systemPrompt = `Bạn là trợ lý bán hàng thân thiện của Classic Records - một cửa hàng âm nhạc chuyên bán Vinyl, CD và Merch.
-
-Thông tin sản phẩm hiện có:
-${products
-  .map(
-    (p) =>
-      `- [${p.category.toUpperCase()}] ${p.title} - ${p.artist} | Giá: ${p.price.toLocaleString('vi-VN')}đ | Tồn kho: ${p.stock}`
-  )
-  .join('\n')}
-
-Nhiệm vụ của bạn:
-- Tư vấn sản phẩm phù hợp với nhu cầu khách hàng
-- Trả lời câu hỏi về đơn hàng, giao hàng, đổi trả
-- Giới thiệu sản phẩm nổi bật
-- Hướng dẫn đặt hàng
-
-Chính sách:
-- Giao hàng toàn quốc 3-7 ngày làm việc
-- Đổi trả trong 7 ngày nếu lỗi sản phẩm
-- Thanh toán: COD, chuyển khoản
-- Hotline: 1800-CLASSIC (hỗ trợ 9h-21h)
-
-Trả lời ngắn gọn, thân thiện bằng tiếng Việt. Nếu không biết, hướng dẫn khách liên hệ hotline.`;
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: messages.map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })),
+        message,
+        history,
+        context: {
+          path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+          cart: cartItems,
+        },
       }),
     });
 
     if (!response.ok) throw new Error('API error');
-    const data = await response.json();
-    return data.content?.[0]?.text || 'Xin lỗi, tôi không hiểu câu hỏi của bạn. Vui lòng thử lại.';
-  } catch {
-    // Fallback rule-based
-    return getRuleBasedResponse(messages[messages.length - 1]?.content || '', products);
+    const data: ChatApiResponse = await response.json();
+    return {
+      response: data.response || 'Xin lỗi, tôi không hiểu câu hỏi của bạn. Vui lòng thử lại.',
+      actions: Array.isArray(data.actions) ? data.actions : [],
+      role: data.role,
+    };
+  } catch (error) {
+    console.error('Chat Error:', error);
+    return {
+      response:
+        'Xin lỗi, tôi gặp trục trặc khi kết nối với máy chủ. Vui lòng thử lại sau hoặc liên hệ hotline 1800-CLASSIC.',
+      actions: [],
+    };
   }
-}
-
-function getRuleBasedResponse(input: string, products: Product[]): string {
-  const q = input.toLowerCase();
-
-  if (q.includes('vinyl') || q.includes('đĩa than')) {
-    const vinyls = products.filter((p) => p.category === 'vinyl');
-    if (vinyls.length === 0) return 'Hiện tại chúng tôi chưa có sản phẩm Vinyl. Vui lòng quay lại sau!';
-    const list = vinyls
-      .slice(0, 3)
-      .map((p) => `• ${p.title} - ${p.artist}: ${p.price.toLocaleString('vi-VN')}đ`)
-      .join('\n');
-    return `🎵 Chúng tôi có ${vinyls.length} sản phẩm Vinyl:\n${list}\n\nXem toàn bộ tại trang /vinyl`;
-  }
-
-  if (q.includes('cd')) {
-    const cds = products.filter((p) => p.category === 'cd');
-    if (cds.length === 0) return 'Hiện tại chúng tôi chưa có sản phẩm CD. Vui lòng quay lại sau!';
-    const list = cds
-      .slice(0, 3)
-      .map((p) => `• ${p.title} - ${p.artist}: ${p.price.toLocaleString('vi-VN')}đ`)
-      .join('\n');
-    return `💿 Chúng tôi có ${cds.length} sản phẩm CD:\n${list}\n\nXem toàn bộ tại trang /cd`;
-  }
-
-  if (q.includes('merch') || q.includes('áo') || q.includes('phụ kiện')) {
-    const merch = products.filter((p) => p.category === 'merch');
-    if (merch.length === 0) return 'Hiện tại chúng tôi chưa có Merch. Vui lòng quay lại sau!';
-    const list = merch
-      .slice(0, 3)
-      .map((p) => `• ${p.title}: ${p.price.toLocaleString('vi-VN')}đ`)
-      .join('\n');
-    return `👕 Merch của chúng tôi:\n${list}\n\nXem toàn bộ tại trang /merch`;
-  }
-
-  if (q.includes('giao hàng') || q.includes('ship') || q.includes('vận chuyển')) {
-    return '🚚 Chính sách giao hàng:\n• Toàn quốc: 3-7 ngày làm việc\n• TP.HCM & Hà Nội: 1-2 ngày\n• Phí ship: tính theo địa chỉ giao hàng\n• Hỗ trợ COD và chuyển khoản';
-  }
-
-  if (q.includes('đổi trả') || q.includes('hoàn tiền') || q.includes('bảo hành')) {
-    return '🔄 Chính sách đổi trả:\n• Đổi trả trong 7 ngày nếu lỗi sản phẩm\n• Vinyl & CD: đổi nếu giao không đúng mô tả\n• Merch: không áp dụng bảo hành cơ bản\n• Liên hệ hotline 1800-CLASSIC để được hỗ trợ';
-  }
-
-  if (q.includes('thanh toán') || q.includes('payment') || q.includes('trả tiền')) {
-    return '💳 Phương thức thanh toán:\n• COD (trả tiền khi nhận hàng)\n• Chuyển khoản ngân hàng\n• Momo, ZaloPay (sắp ra mắt)';
-  }
-
-  if (q.includes('đơn hàng') || q.includes('order') || q.includes('theo dõi')) {
-    return '📦 Theo dõi đơn hàng:\n• Đăng nhập vào tài khoản → mục "Đơn hàng của tôi"\n• Hoặc kiểm tra email xác nhận\n• Hỗ trợ: 1800-CLASSIC (9h-21h hàng ngày)';
-  }
-
-  if (q.includes('giá') || q.includes('price') || q.includes('bao nhiêu') || q.includes('rẻ') || q.includes('đắt')) {
-    const cheapest = [...products].sort((a, b) => a.price - b.price)[0];
-    const expensive = [...products].sort((a, b) => b.price - a.price)[0];
-    if (!cheapest) return 'Vui lòng xem giá sản phẩm trực tiếp trên website!';
-    return `💰 Giá sản phẩm của chúng tôi:\n• Rẻ nhất: ${cheapest.title} - ${cheapest.price.toLocaleString('vi-VN')}đ\n• Cao nhất: ${expensive.title} - ${expensive.price.toLocaleString('vi-VN')}đ\n\nXem toàn bộ sản phẩm để tìm lựa chọn phù hợp!`;
-  }
-
-  if (q.includes('liên hệ') || q.includes('contact') || q.includes('hotline') || q.includes('hỗ trợ')) {
-    return '📞 Liên hệ Classic Records:\n• Hotline: 1800-CLASSIC\n• Giờ hỗ trợ: 9h-21h hàng ngày\n• Email: support@classicrecords.vn\n• Hoặc để lại tin nhắn tại trang /contact';
-  }
-
-  if (q.includes('xin chào') || q.includes('hello') || q.includes('hi') || q.includes('chào')) {
-    return '👋 Xin chào! Tôi là trợ lý ảo của Classic Records.\n\nTôi có thể giúp bạn:\n• Tìm kiếm sản phẩm Vinyl, CD, Merch\n• Tư vấn lựa chọn sản phẩm\n• Giải đáp thắc mắc về đơn hàng\n\nBạn cần tôi hỗ trợ điều gì?';
-  }
-
-  if (q.includes('cảm ơn') || q.includes('thanks') || q.includes('thank you')) {
-    return '😊 Không có gì! Rất vui được phục vụ bạn. Chúc bạn mua sắm vui vẻ tại Classic Records! 🎵';
-  }
-
-  // Default
-  const totalProducts = products.length;
-  return `Tôi có thể giúp bạn tìm hiểu về:\n• 🎵 Sản phẩm Vinyl, CD, Merch (${totalProducts} sản phẩm)\n• 🚚 Chính sách giao hàng & đổi trả\n• 📦 Theo dõi đơn hàng\n• 📞 Liên hệ hỗ trợ\n\nBạn muốn biết điều gì?`;
 }
 
 // ============================================================
@@ -170,37 +77,100 @@ function getRuleBasedResponse(input: string, products: Product[]): string {
 // ============================================================
 const QUICK_REPLIES = [
   { label: '🎵 Xem Vinyl', text: 'Tôi muốn xem sản phẩm Vinyl' },
-  { label: '💿 Xem CD', text: 'Cho tôi xem các đĩa CD' },
+  { label: '💿 Xem CD', text: 'Cho tôi xem các đĩa CD dưới 30$' },
   { label: '👕 Xem Merch', text: 'Có những Merch gì?' },
+  { label: '📦 Đơn của tôi', text: 'Cho tôi xem các đơn hàng của tôi' },
+  { label: '📊 Thống kê (admin)', text: 'Cho tôi xem thống kê doanh thu' },
   { label: '🚚 Giao hàng', text: 'Chính sách giao hàng như thế nào?' },
-  { label: '🔄 Đổi trả', text: 'Chính sách đổi trả ra sao?' },
-  { label: '📦 Đơn hàng', text: 'Tôi muốn theo dõi đơn hàng' },
 ];
 
 // ============================================================
 // CHATBOT COMPONENT
 // ============================================================
+const MAX_HISTORY_ITEMS = 12;
+const IDLE_CLEAR_MS = 30 * 60 * 1000; // 30 phút
+const MESSAGES_STORAGE_KEY = 'classic_records_chat_messages';
+const LAST_ACTIVITY_KEY = 'classic_records_chat_last_activity';
+
+const INITIAL_GREETING: Message = {
+  id: '0',
+  role: 'assistant',
+  content:
+    '👋 Xin chào! Tôi là trợ lý ảo của **Classic Records**, chạy bằng DeepSeek V3.2.\n\nTôi có thể giúp bạn:\n• Tìm sản phẩm (Vinyl/CD/Merch, theo nghệ sĩ, giá…)\n• Thêm sản phẩm vào giỏ hàng (sẽ hỏi xác nhận trước)\n• Xem đơn hàng của bạn (cần đăng nhập)\n• Quản lý đơn (sửa trạng thái, xóa) — admin\n\nBạn cần gì?',
+  timestamp: new Date(),
+};
+
+const getRecentHistory = (messages: Message[]) =>
+  messages.slice(-MAX_HISTORY_ITEMS).map((m) => ({ role: m.role, content: m.content }));
+
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '0',
-      role: 'assistant',
-      content: '👋 Xin chào! Tôi là trợ lý ảo của **Classic Records**.\n\nTôi có thể giúp bạn tìm sản phẩm, tư vấn mua hàng và giải đáp thắc mắc. Bạn cần gì không?',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_GREETING]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const dispatch = useDispatch();
+  const idleTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    fetchProducts().then(setProducts);
+  const resetHistory = useCallback(() => {
+    setMessages([{ ...INITIAL_GREETING, timestamp: new Date() }]);
+    try {
+      localStorage.removeItem(MESSAGES_STORAGE_KEY);
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
+    } catch {
+      /* ignore */
+    }
   }, []);
+
+  const armIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = window.setTimeout(resetHistory, IDLE_CLEAR_MS);
+  }, [resetHistory]);
+
+  // Khôi phục history từ localStorage; nếu quá 30p không hoạt động thì reset
+  useEffect(() => {
+    try {
+      const lastTs = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+      if (lastTs && Date.now() - lastTs > IDLE_CLEAR_MS) {
+        resetHistory();
+        return;
+      }
+      const saved = localStorage.getItem(MESSAGES_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(
+            parsed.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp),
+            }))
+          );
+        }
+      }
+    } catch (error) {
+      console.warn('Không thể load lịch sử chat:', error);
+    }
+    armIdleTimer();
+    return () => {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+    };
+  }, [armIdleTimer, resetHistory]);
+
+  // Persist messages + cập nhật timestamp hoạt động cuối + rearm idle timer
+  useEffect(() => {
+    try {
+      localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+    } catch (error) {
+      console.warn('Không thể lưu lịch sử chat:', error);
+    }
+    armIdleTimer();
+  }, [messages, armIdleTimer]);
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -209,9 +179,54 @@ const ChatBot: React.FC = () => {
     }
   }, [isOpen]);
 
+  // Auto-scroll: chỉ cuộn trong khung chat, không kéo cả trang web.
+  // 2 lần RAF + listener cho ảnh load xong (vì ảnh sản phẩm làm scrollHeight tăng sau).
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const scrollToBottom = () => {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    };
+    const r1 = requestAnimationFrame(() => {
+      requestAnimationFrame(scrollToBottom);
+    });
+
+    const imgs = container.querySelectorAll('img');
+    const handlers: Array<() => void> = [];
+    imgs.forEach((img) => {
+      if (!img.complete) {
+        const h = () => scrollToBottom();
+        img.addEventListener('load', h, { once: true });
+        img.addEventListener('error', h, { once: true });
+        handlers.push(() => {
+          img.removeEventListener('load', h);
+          img.removeEventListener('error', h);
+        });
+      }
+    });
+
+    return () => {
+      cancelAnimationFrame(r1);
+      handlers.forEach((cleanup) => cleanup());
+    };
+  }, [messages, isLoading, isOpen, isMinimized]);
+
+  const applyChatActions = useCallback(
+    (actions: ChatAction[] | undefined) => {
+      if (!actions || actions.length === 0) return;
+      for (const action of actions) {
+        if (action.type === 'add_to_cart' && action.product) {
+          dispatch(
+            addToCart({
+              product: action.product,
+              quantity: action.quantity || 1,
+            })
+          );
+        }
+      }
+    },
+    [dispatch]
+  );
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -228,12 +243,10 @@ const ChatBot: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const history = [...messages, userMessage].map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
+      const history = getRecentHistory(messages);
 
-      const response = await getAIResponse(history, products);
+      const { response, actions } = await getChatResponse(text.trim(), history, cartItems);
+      applyChatActions(actions);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -381,14 +394,15 @@ const ChatBot: React.FC = () => {
             <>
               {/* MESSAGES */}
               <div
+                ref={messagesContainerRef}
                 style={{
                   flex: 1,
                   overflowY: 'auto',
-                  padding: '16px',
+                  padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
-                  background: '#fafafa',
+                  gap: '16px',
+                  background: '#fcfcfc',
                 }}
               >
                 {messages.map((msg) => (
@@ -396,127 +410,82 @@ const ChatBot: React.FC = () => {
                     key={msg.id}
                     style={{
                       display: 'flex',
-                      flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                      alignItems: 'flex-end',
-                      gap: '8px',
+                      flexDirection: 'column',
+                      alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      maxWidth: '100%',
                     }}
                   >
-                    {msg.role === 'assistant' && (
-                      <div
-                        style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '50%',
-                          background: '#0a0a0a',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '12px',
-                          flexShrink: 0,
-                        }}
-                      >
-                        🎵
-                      </div>
-                    )}
                     <div
                       style={{
-                        maxWidth: '75%',
-                        padding: '10px 14px',
-                        borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                        padding: '12px 16px',
+                        borderRadius: msg.role === 'user' ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
                         background: msg.role === 'user' ? '#0a0a0a' : '#fff',
                         color: msg.role === 'user' ? '#fff' : '#1a1a1a',
-                        fontSize: '13px',
+                        fontSize: '13.5px',
                         lineHeight: '1.6',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-                        border: msg.role === 'assistant' ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                        boxShadow: msg.role === 'user' ? 'none' : '0 2px 8px rgba(0,0,0,0.05)',
+                        border: msg.role === 'user' ? 'none' : '1px solid rgba(0,0,0,0.05)',
+                        whiteSpace: 'pre-wrap',
                       }}
                       dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }}
                     />
+                    <div
+                      style={{
+                        fontSize: '10px',
+                        color: '#999',
+                        marginTop: '4px',
+                        marginRight: msg.role === 'user' ? '4px' : 0,
+                        marginLeft: msg.role === 'assistant' ? '4px' : 0,
+                      }}
+                    >
+                      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 ))}
-
                 {isLoading && (
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-                    <div
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        background: '#0a0a0a',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '12px',
-                      }}
-                    >
-                      🎵
-                    </div>
-                    <div
-                      style={{
-                        padding: '10px 16px',
-                        background: '#fff',
-                        borderRadius: '18px 18px 18px 4px',
-                        border: '1px solid rgba(0,0,0,0.06)',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-                        display: 'flex',
-                        gap: '4px',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {[0, 1, 2].map((i) => (
-                        <span
-                          key={i}
-                          style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: '#999',
-                            animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                            display: 'inline-block',
-                          }}
-                        />
-                      ))}
-                    </div>
+                  <div style={{ display: 'flex', gap: '4px', padding: '10px' }}>
+                    <div style={{ width: '6px', height: '6px', background: '#ccc', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both' }} />
+                    <div style={{ width: '6px', height: '6px', background: '#ccc', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.2s' }} />
+                    <div style={{ width: '6px', height: '6px', background: '#ccc', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.4s' }} />
                   </div>
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               {/* QUICK REPLIES */}
-              {messages.length <= 2 && (
+              {!isLoading && (
                 <div
                   style={{
-                    padding: '8px 12px',
+                    padding: '0 16px 12px',
                     display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '6px',
-                    borderTop: '1px solid rgba(0,0,0,0.06)',
-                    background: '#fff',
+                    gap: '8px',
+                    overflowX: 'auto',
+                    whiteSpace: 'nowrap',
+                    scrollbarWidth: 'none',
+                    background: '#fcfcfc',
                   }}
                 >
-                  {QUICK_REPLIES.map((qr) => (
+                  {QUICK_REPLIES.map((qr, idx) => (
                     <button
-                      key={qr.label}
+                      key={idx}
                       onClick={() => sendMessage(qr.text)}
                       style={{
-                        background: '#f4f4f4',
-                        border: '1px solid rgba(0,0,0,0.1)',
+                        padding: '8px 16px',
                         borderRadius: '20px',
-                        padding: '5px 12px',
-                        fontSize: '11px',
+                        background: '#fff',
+                        border: '1px solid rgba(0,0,0,0.1)',
+                        fontSize: '12px',
                         cursor: 'pointer',
-                        color: '#333',
-                        fontWeight: 500,
-                        transition: 'all 0.15s',
-                        whiteSpace: 'nowrap',
+                        color: '#555',
+                        transition: 'all 0.2s',
+                        flexShrink: 0,
                       }}
                       onMouseOver={(e) => {
-                        (e.target as HTMLButtonElement).style.background = '#0a0a0a';
-                        (e.target as HTMLButtonElement).style.color = '#fff';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = '#0a0a0a';
+                        (e.currentTarget as HTMLButtonElement).style.color = '#0a0a0a';
                       }}
                       onMouseOut={(e) => {
-                        (e.target as HTMLButtonElement).style.background = '#f4f4f4';
-                        (e.target as HTMLButtonElement).style.color = '#333';
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.1)';
+                        (e.currentTarget as HTMLButtonElement).style.color = '#555';
                       }}
                     >
                       {qr.label}
@@ -550,7 +519,7 @@ const ChatBot: React.FC = () => {
                     padding: '10px 16px',
                     fontSize: '13px',
                     outline: 'none',
-                    background: '#f9f9f9',
+                    background: '#000000',
                     fontFamily: 'inherit',
                     transition: 'border-color 0.2s',
                   }}

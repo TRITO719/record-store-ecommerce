@@ -15,6 +15,10 @@ export const env = {
   DATABASE_URL: getRequiredEnv('DATABASE_URL'),
   JWT_SECRET: getRequiredEnv('JWT_SECRET'),
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-  SMTP_USER: getRequiredEnv('SMTP_USER'),
-  SMTP_PASS: getRequiredEnv('SMTP_PASS'),
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || '',
+  DEEPSEEK_API_URL: process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/chat/completions',
+  DEEPSEEK_MODEL: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+  HF_API_TOKEN: process.env.HF_API_TOKEN || '',
+  HF_MODEL: process.env.HF_MODEL || 'google/flan-t5-base',
 };
