@@ -84,6 +84,8 @@ const OrderStats: React.FC = () => {
   const chartData = data?.chartData || [];
   const recentOrders = data?.recentOrders || [];
 
+  const tooltipStyle = { borderRadius: 10, border: '1px solid var(--border)', fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' };
+
   return (
     <div>
       <StatsPageHeader
@@ -134,7 +136,7 @@ const OrderStats: React.FC = () => {
                     </Pie>
                     <Tooltip
                       formatter={(value: unknown, name: unknown) => [String(value), String(name)]}
-                      contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }}
+                      contentStyle={tooltipStyle}
                     />
                     <Legend
                       formatter={(value) => {
@@ -146,7 +148,7 @@ const OrderStats: React.FC = () => {
                       }}
                       iconType="circle"
                       iconSize={8}
-                      wrapperStyle={{ fontSize: 12 }}
+                      wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -160,18 +162,18 @@ const OrderStats: React.FC = () => {
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0ee" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis
                       dataKey="date"
                       tickFormatter={(d) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                      tick={{ fontSize: 10, fill: '#999' }}
+                      tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
                       axisLine={false} tickLine={false}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: '#999' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                     <Tooltip
                       formatter={(value: unknown) => [String(value), 'Đơn hàng']}
                       labelFormatter={(label) => fmtDate(label)}
-                      contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }}
+                      contentStyle={tooltipStyle}
                     />
                     <Bar dataKey="count" fill={CHART_COLORS.blue} radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -181,9 +183,9 @@ const OrderStats: React.FC = () => {
           </div>
 
           {/* Recent orders table */}
-          <div style={{ background: '#fff', border: '1px solid #e8e8e6', borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e8e8e6' }}>
-              <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: '#111' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
                 Đơn hàng gần đây
               </h3>
             </div>
@@ -193,9 +195,9 @@ const OrderStats: React.FC = () => {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: '#f8f8f7' }}>
+                    <tr style={{ background: 'var(--bg-secondary)' }}>
                       {['Mã đơn', 'Khách hàng', 'Sản phẩm', 'Tổng tiền', 'Trạng thái', 'Ngày đặt'].map((h) => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: '1px solid #e8e8e6' }}>
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
                           {h}
                         </th>
                       ))}
@@ -203,18 +205,18 @@ const OrderStats: React.FC = () => {
                   </thead>
                   <tbody>
                     {recentOrders.map((order: any, i) => (
-                      <tr key={order.id} style={{ borderBottom: i < recentOrders.length - 1 ? '1px solid #f2f1ee' : 'none' }}>
-                        <td style={{ padding: '11px 16px', fontSize: 12, fontWeight: 700, color: '#555', fontFamily: 'monospace' }}>
+                      <tr key={order.id} style={{ borderBottom: i < recentOrders.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '11px 16px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                           #{order.id.split('-')[0].toUpperCase()}
                         </td>
                         <td style={{ padding: '11px 16px' }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.user?.fullName || 'Khách vãng lai'}</p>
-                          <p style={{ fontSize: 11, color: '#999' }}>{order.customerEmail}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{order.user?.fullName || 'Khách vãng lai'}</p>
+                          <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{order.customerEmail}</p>
                         </td>
-                        <td style={{ padding: '11px 16px', fontSize: 13, color: '#555' }}>{order.orderItems?.length || 0} sp</td>
-                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: '#111' }}>{fmtCurrency(order.totalAmount)}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{order.orderItems?.length || 0} sp</td>
+                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{fmtCurrency(order.totalAmount)}</td>
                         <td style={{ padding: '11px 16px' }}><OrderStatusBadge status={order.status} /></td>
-                        <td style={{ padding: '11px 16px', fontSize: 12, color: '#999' }}>{fmtDate(order.createdAt)}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{fmtDate(order.createdAt)}</td>
                       </tr>
                     ))}
                   </tbody>

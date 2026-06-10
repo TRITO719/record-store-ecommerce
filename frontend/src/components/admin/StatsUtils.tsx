@@ -43,7 +43,7 @@ export const TimeFilter: React.FC<TimeFilterProps> = ({ value, onChange }) => {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-      <Calendar size={15} style={{ color: '#999' }} />
+      <Calendar size={15} style={{ color: 'var(--text-muted)' }} />
       {PERIODS.map((p) => (
         <button
           key={p.value}
@@ -51,9 +51,9 @@ export const TimeFilter: React.FC<TimeFilterProps> = ({ value, onChange }) => {
           style={{
             padding: '6px 14px',
             borderRadius: 20,
-            border: `1px solid ${value.period === p.value ? '#1db954' : '#e8e8e6'}`,
-            background: value.period === p.value ? 'rgba(29,185,84,0.1)' : '#fff',
-            color: value.period === p.value ? '#1db954' : '#666',
+            border: `1px solid ${value.period === p.value ? '#1db954' : 'var(--border-strong)'}`,
+            background: value.period === p.value ? 'rgba(29,185,84,0.1)' : 'var(--bg-card)',
+            color: value.period === p.value ? '#1db954' : 'var(--text-secondary)',
             fontSize: 12.5,
             fontWeight: value.period === p.value ? 700 : 500,
             cursor: 'pointer',
@@ -72,15 +72,15 @@ export const TimeFilter: React.FC<TimeFilterProps> = ({ value, onChange }) => {
             max={today}
             value={value.startDate}
             onChange={(e) => onChange({ ...value, startDate: e.target.value })}
-            style={{ padding: '5px 10px', border: '1px solid #e8e8e6', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none' }}
+            style={{ padding: '5px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
           />
-          <span style={{ color: '#999', fontSize: 12 }}>đến</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>đến</span>
           <input
             type="date"
             max={today}
             value={value.endDate}
             onChange={(e) => onChange({ ...value, endDate: e.target.value })}
-            style={{ padding: '5px 10px', border: '1px solid #e8e8e6', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none' }}
+            style={{ padding: '5px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, fontFamily: 'inherit', outline: 'none', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
           />
         </div>
       )}
@@ -100,8 +100,8 @@ interface StatCardProps {
 
 export const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, color = '#1db954', trend }) => (
   <div style={{
-    background: '#fff',
-    border: '1px solid #e8e8e6',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
     borderRadius: 14,
     padding: '20px 22px',
     display: 'flex',
@@ -109,11 +109,11 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon
     gap: 14,
     transition: 'box-shadow 0.2s',
   }}
-    onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)')}
+    onMouseEnter={(e) => (e.currentTarget.style.boxShadow = 'var(--shadow-md)')}
     onMouseLeave={(e) => (e.currentTarget.style.boxShadow = 'none')}
   >
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <span style={{ fontSize: 12, fontWeight: 700, color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
         {title}
       </span>
       <div style={{
@@ -129,11 +129,11 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon
       <p style={{
         fontFamily: 'Plus Jakarta Sans, sans-serif',
         fontWeight: 800, fontSize: 28,
-        color: '#111', lineHeight: 1, marginBottom: 4,
+        color: 'var(--text-primary)', lineHeight: 1, marginBottom: 4,
       }}>
         {value}
       </p>
-      {subtitle && <p style={{ fontSize: 12, color: '#999' }}>{subtitle}</p>}
+      {subtitle && <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{subtitle}</p>}
     </div>
     {trend && (
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -143,7 +143,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon
         }}>
           {trend.value >= 0 ? '↑' : '↓'} {Math.abs(trend.value)}%
         </span>
-        <span style={{ fontSize: 11, color: '#bbb' }}>{trend.label}</span>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{trend.label}</span>
       </div>
     )}
   </div>
@@ -179,12 +179,12 @@ export const StatsPageHeader: React.FC<StatsPageHeaderProps> = ({
           <h1 style={{
             fontFamily: 'Plus Jakarta Sans, sans-serif',
             fontWeight: 800, fontSize: 24,
-            color: '#111', marginBottom: 2,
+            color: 'var(--text-primary)', marginBottom: 2,
             letterSpacing: '-0.02em',
           }}>
             {title}
           </h1>
-          <p style={{ fontSize: 13, color: '#999' }}>{subtitle}</p>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{subtitle}</p>
         </div>
       </div>
 
@@ -194,8 +194,8 @@ export const StatsPageHeader: React.FC<StatsPageHeaderProps> = ({
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '9px 18px',
-          background: exporting ? '#f2f1ee' : '#111',
-          color: exporting ? '#999' : '#fff',
+          background: exporting ? 'var(--bg-secondary)' : 'var(--text-primary)',
+          color: exporting ? 'var(--text-muted)' : 'var(--text-inverse)',
           border: 'none', borderRadius: 10,
           fontSize: 12.5, fontWeight: 700,
           cursor: exporting ? 'not-allowed' : 'pointer',
@@ -210,8 +210,8 @@ export const StatsPageHeader: React.FC<StatsPageHeaderProps> = ({
     </div>
 
     <div style={{
-      background: '#fff',
-      border: '1px solid #e8e8e6',
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border)',
       borderRadius: 12,
       padding: '12px 16px',
     }}>
@@ -227,13 +227,13 @@ export const StatsSkeleton: React.FC = () => (
       {[0, 1, 2, 3].map((i) => (
         <div key={i} style={{
           height: 120, borderRadius: 14,
-          background: 'linear-gradient(90deg, #f2f1ee 25%, #e8e8e6 50%, #f2f1ee 75%)',
+          background: 'linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-card) 50%, var(--bg-secondary) 75%)',
           backgroundSize: '200% 100%',
           animation: 'shimmer 1.4s infinite',
         }} />
       ))}
     </div>
-    <div style={{ height: 320, borderRadius: 14, background: 'linear-gradient(90deg, #f2f1ee 25%, #e8e8e6 50%, #f2f1ee 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite' }} />
+    <div style={{ height: 320, borderRadius: 14, background: 'linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-card) 50%, var(--bg-secondary) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.4s infinite' }} />
   </div>
 );
 
@@ -241,12 +241,12 @@ export const StatsSkeleton: React.FC = () => (
 export const EmptyState: React.FC<{ message?: string }> = ({ message = 'Không có dữ liệu cho khoảng thời gian này.' }) => (
   <div style={{
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    padding: '60px 24px', color: '#999', textAlign: 'center',
-    background: '#fff', borderRadius: 14, border: '1px solid #e8e8e6',
+    padding: '60px 24px', color: 'var(--text-muted)', textAlign: 'center',
+    background: 'var(--bg-card)', borderRadius: 14, border: '1px solid var(--border)',
   }}>
     <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
-    <p style={{ fontSize: 14, fontWeight: 600, color: '#555', marginBottom: 4 }}>Chưa có dữ liệu</p>
-    <p style={{ fontSize: 13, color: '#bbb' }}>{message}</p>
+    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Chưa có dữ liệu</p>
+    <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{message}</p>
   </div>
 );
 
@@ -331,15 +331,15 @@ export const ChartCard: React.FC<{ title: string; subtitle?: string; children: R
   title, subtitle, children, minHeight = 300,
 }) => (
   <div style={{
-    background: '#fff',
-    border: '1px solid #e8e8e6',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
     borderRadius: 14,
     padding: '20px 22px',
     overflow: 'hidden',
   }}>
     <div style={{ marginBottom: 16 }}>
-      <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: '#111' }}>{title}</h3>
-      {subtitle && <p style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{subtitle}</p>}
+      <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>{title}</h3>
+      {subtitle && <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</p>}
     </div>
     <div style={{ minHeight }}>{children}</div>
   </div>
@@ -355,7 +355,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
 };
 
 export const OrderStatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const cfg = STATUS_MAP[status] || { label: status, color: '#999', bg: '#f2f1ee' };
+  const cfg = STATUS_MAP[status] || { label: status, color: 'var(--text-muted)', bg: 'var(--bg-secondary)' };
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center',

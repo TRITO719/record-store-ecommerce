@@ -106,21 +106,21 @@ const AdminProducts: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end border-b border-rs-border pb-4">
+      <div className="flex justify-between items-end pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div>
-          <h1 className="text-3xl font-display font-bold uppercase tracking-tight mb-2">Quản lý Sản phẩm</h1>
-          <p className="text-[11px] uppercase tracking-widest text-gray-500">Danh sách Vinyl, CD và Merchandise</p>
+          <h1 className="text-3xl font-display font-bold uppercase tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>Quản lý Sản phẩm</h1>
+          <p className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>Danh sách Vinyl, CD và Merchandise</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 bg-black text-white px-5 py-3 text-[11px] font-bold uppercase tracking-widest hover:bg-zinc-800 transition-colors">
+        <button onClick={() => handleOpenModal()} className="flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest transition-colors" style={{ background: 'var(--text-primary)', color: 'var(--text-inverse)' }}>
           <Plus size={16} />
           Thêm sản phẩm
         </button>
       </div>
 
-      <div className="bg-white border border-rs-border overflow-x-auto">
+      <div className="overflow-x-auto" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <table className="w-full text-left">
           <thead>
-            <tr className="text-[10px] uppercase tracking-[0.2em] text-gray-500 border-b border-rs-border bg-rs-gray-light">
+            <tr className="text-[10px] uppercase tracking-[0.2em]" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
               <th className="p-5 font-bold">ID</th>
               <th className="p-5 font-bold">Hình ảnh</th>
               <th className="p-5 font-bold">Tên sản phẩm / Nghệ sĩ</th>
@@ -130,76 +130,76 @@ const AdminProducts: React.FC = () => {
               <th className="p-5 font-bold text-right">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody className="text-sm" style={{ color: 'var(--text-primary)' }}>
             {products.map((item) => (
-              <tr key={item.id} className="border-b border-rs-border last:border-0 hover:bg-rs-gray-light/50">
+              <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td className="p-5 font-bold">#{item.id}</td>
                 <td className="p-5">
-                  <div className="w-12 h-12 bg-gray-200 border border-rs-border overflow-hidden">
+                  <div className="w-12 h-12 overflow-hidden" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
                     <img src={item.imgUrl} alt={item.title} className="w-full h-full object-cover" />
                   </div>
                 </td>
                 <td className="p-5">
                   <p className="font-bold uppercase tracking-wider text-sm mb-1">{item.title}</p>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold">{item.artist}</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold" style={{ color: 'var(--text-secondary)' }}>{item.artist}</p>
                 </td>
                 <td className="p-5">
-                  <span className="inline-block bg-black text-white px-2 py-1 text-[9px] uppercase tracking-widest font-bold">{item.category}</span>
+                  <span className="inline-block px-2 py-1 text-[9px] uppercase tracking-widest font-bold" style={{ background: 'var(--text-primary)', color: 'var(--text-inverse)' }}>{item.category}</span>
                 </td>
                 <td className="p-5 font-bold">${item.price.toFixed(2)}</td>
                 <td className="p-5 font-bold">{item.stock}</td>
                 <td className="p-5">
                   <div className="flex justify-end gap-3">
-                    <button onClick={() => handleOpenModal(item)} className="text-gray-500 hover:text-black transition-colors"><Edit size={16} /></button>
-                    <button onClick={() => handleDelete(item.id)} className="text-gray-500 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                    <button onClick={() => handleOpenModal(item)} className="transition-colors" style={{ color: 'var(--text-secondary)' }}><Edit size={16} /></button>
+                    <button onClick={() => handleDelete(item.id)} className="hover:text-red-500 transition-colors" style={{ color: 'var(--text-secondary)' }}><Trash2 size={16} /></button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {products.length === 0 && <p className="text-sm text-gray-500 p-5 text-center">Không có sản phẩm nào.</p>}
+        {products.length === 0 && <p className="text-sm p-5 text-center" style={{ color: 'var(--text-secondary)' }}>Không có sản phẩm nào.</p>}
       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white w-full max-w-sm border border-rs-border max-h-[85vh] flex flex-col">
-            <h2 className="text-lg font-bold uppercase tracking-widest px-6 pt-6 pb-4 border-b border-rs-border shrink-0">
+          <div className="w-full max-w-sm max-h-[85vh] flex flex-col" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+            <h2 className="text-lg font-bold uppercase tracking-widest px-6 pt-6 pb-4" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}>
               {editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
             </h2>
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
               <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
-                <input type="text" placeholder="Tên sản phẩm" required className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-                <input type="text" placeholder="Nghệ sĩ" required className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.artist} onChange={e => setFormData({...formData, artist: e.target.value})} />
+                <input type="text" placeholder="Tên sản phẩm" required className="w-full p-2.5 text-sm focus:outline-none" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                <input type="text" placeholder="Nghệ sĩ" required className="w-full p-2.5 text-sm focus:outline-none" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} value={formData.artist} onChange={e => setFormData({...formData, artist: e.target.value})} />
                 <div className="flex gap-3">
-                  <input type="number" step="0.01" placeholder="Giá ($)" required className="w-1/2 border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
-                  <input type="number" placeholder="Tồn kho" required className="w-1/2 border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                  <input type="number" step="0.01" placeholder="Giá ($)" required className="w-1/2 p-2.5 text-sm focus:outline-none" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                  <input type="number" placeholder="Tồn kho" required className="w-1/2 p-2.5 text-sm focus:outline-none" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
                 </div>
-                <textarea placeholder="Mô tả sản phẩm" className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black h-20 resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <textarea placeholder="Mô tả sản phẩm" className="w-full p-2.5 text-sm focus:outline-none h-20 resize-none" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
                 
-                <div className="flex flex-col gap-2 bg-rs-gray-light p-3 border border-rs-border">
-                  <label className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Hình ảnh sản phẩm</label>
+                <div className="flex flex-col gap-2 p-3" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                  <label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--text-secondary)' }}>Hình ảnh sản phẩm</label>
                   <div className="flex items-center gap-3">
-                    <input type="file" accept="image/*" onChange={handleFileUpload} className="text-xs w-full file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-black file:text-white hover:file:bg-zinc-800 cursor-pointer" disabled={isUploading} />
-                    {isUploading && <span className="text-[10px] uppercase tracking-widest text-gray-500 whitespace-nowrap">Đang tải...</span>}
+                    <input type="file" accept="image/*" onChange={handleFileUpload} className="text-xs w-full file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-black file:text-white hover:file:bg-zinc-800 cursor-pointer" style={{ color: 'var(--text-primary)' }} disabled={isUploading} />
+                    {isUploading && <span className="text-[10px] uppercase tracking-widest whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>Đang tải...</span>}
                   </div>
-                  <input type="text" placeholder="Hoặc nhập URL Hình ảnh" required className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black bg-white" value={formData.imgUrl} onChange={e => setFormData({...formData, imgUrl: e.target.value})} />
+                  <input type="text" placeholder="Hoặc nhập URL Hình ảnh" required className="w-full p-2.5 text-sm focus:outline-none" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} value={formData.imgUrl} onChange={e => setFormData({...formData, imgUrl: e.target.value})} />
                   {formData.imgUrl && (
-                    <div className="mt-1 w-16 h-16 border border-rs-border overflow-hidden bg-white">
+                    <div className="mt-1 w-16 h-16 overflow-hidden" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)' }}>
                       <img src={formData.imgUrl} alt="Preview" className="w-full h-full object-cover" />
                     </div>
                   )}
                 </div>
 
-                <select className="w-full border border-rs-border p-2.5 text-sm focus:outline-none focus:border-black uppercase tracking-widest" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                <select className="w-full p-2.5 text-sm focus:outline-none uppercase tracking-widest" style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }} value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
                   <option value="vinyl">Vinyl</option>
                   <option value="cd">CD</option>
                   <option value="merch">Merch</option>
                 </select>
               </div>
-              <div className="flex justify-end gap-3 px-6 py-4 border-t border-rs-border shrink-0">
-                <button type="button" onClick={handleCloseModal} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest border border-rs-border hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest bg-black text-white hover:bg-zinc-800 transition-colors">Lưu</button>
+              <div className="flex justify-end gap-3 px-6 py-4" style={{ borderTop: '1px solid var(--border)' }}>
+                <button type="button" onClick={handleCloseModal} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)', background: 'transparent' }}>Hủy</button>
+                <button type="submit" className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest transition-colors" style={{ background: 'var(--text-primary)', color: 'var(--text-inverse)' }}>Lưu</button>
               </div>
             </form>
           </div>

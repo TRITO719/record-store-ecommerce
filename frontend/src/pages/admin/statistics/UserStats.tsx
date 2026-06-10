@@ -60,6 +60,8 @@ const UserStats: React.FC = () => {
     spent: c.totalSpent,
   }));
 
+  const tooltipStyle = { borderRadius: 10, border: '1px solid var(--border)', fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' };
+
   return (
     <div>
       <StatsPageHeader
@@ -108,17 +110,17 @@ const UserStats: React.FC = () => {
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0ee" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                    tick={{ fontSize: 11, fill: '#999' }} axisLine={false} tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false}
                   />
-                  <YAxis tick={{ fontSize: 11, fill: '#999' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip
                     formatter={(value: unknown) => [String(value), 'Khách mới']}
                     labelFormatter={(label) => fmtDate(label)}
-                    contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }}
+                    contentStyle={tooltipStyle}
                   />
                   <Line type="monotone" dataKey="count" stroke={CHART_COLORS.purple} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
                 </LineChart>
@@ -133,12 +135,12 @@ const UserStats: React.FC = () => {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={topBarData} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0ee" horizontal={false} />
-                  <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11, fill: '#999' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11, fill: '#555' }} axisLine={false} tickLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                  <XAxis type="number" tickFormatter={(v) => `$${v}`} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     formatter={(value: unknown) => [fmtCurrency(Number(value)), 'Chi tiêu']}
-                    contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }}
+                    contentStyle={tooltipStyle}
                   />
                   <Bar dataKey="spent" fill={CHART_COLORS.purple} radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -147,9 +149,9 @@ const UserStats: React.FC = () => {
           </ChartCard>
 
           {/* Top customers table */}
-          <div style={{ background: '#fff', border: '1px solid #e8e8e6', borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e8e8e6' }}>
-              <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: '#111' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
                 Bảng xếp hạng khách hàng
               </h3>
             </div>
@@ -159,9 +161,9 @@ const UserStats: React.FC = () => {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: '#f8f8f7' }}>
+                    <tr style={{ background: 'var(--bg-secondary)' }}>
                       {['#', 'Khách hàng', 'Email', 'Số đơn', 'Tổng chi tiêu'].map((h) => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: '1px solid #e8e8e6' }}>
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
                           {h}
                         </th>
                       ))}
@@ -169,15 +171,15 @@ const UserStats: React.FC = () => {
                   </thead>
                   <tbody>
                     {topCustomers.map((c, i) => (
-                      <tr key={c.userId || i} style={{ borderBottom: i < topCustomers.length - 1 ? '1px solid #f2f1ee' : 'none' }}>
-                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: i < 3 ? CHART_COLORS.purple : '#bbb' }}>
+                      <tr key={c.userId || i} style={{ borderBottom: i < topCustomers.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: i < 3 ? CHART_COLORS.purple : 'var(--text-muted)' }}>
                           {i === 0 ? '👑' : `#${i + 1}`}
                         </td>
-                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 600, color: '#111' }}>
+                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
                           {c.user?.fullName || 'Ẩn danh'}
                         </td>
-                        <td style={{ padding: '11px 16px', fontSize: 12, color: '#999' }}>{c.user?.email || '-'}</td>
-                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 600, color: '#555' }}>{c.orderCount} đơn</td>
+                        <td style={{ padding: '11px 16px', fontSize: 12, color: 'var(--text-muted)' }}>{c.user?.email || '-'}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{c.orderCount} đơn</td>
                         <td style={{ padding: '11px 16px', fontSize: 14, fontWeight: 800, color: CHART_COLORS.purple }}>{fmtCurrency(c.totalSpent)}</td>
                       </tr>
                     ))}

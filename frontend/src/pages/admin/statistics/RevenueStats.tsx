@@ -63,6 +63,8 @@ const RevenueStats: React.FC = () => {
 
   const chartData = data?.chartData || [];
 
+  const tooltipStyle = { borderRadius: 10, border: '1px solid var(--border)', fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' };
+
   return (
     <div>
       <StatsPageHeader
@@ -118,24 +120,24 @@ const RevenueStats: React.FC = () => {
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0ee" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                    tick={{ fontSize: 11, fill: '#999' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
                     tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                    tick={{ fontSize: 11, fill: '#999' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
                     formatter={(v: unknown) => [fmtCurrency(Number(v)), 'Doanh thu']}
                     labelFormatter={(label) => fmtDate(label)}
-                    contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }}
+                    contentStyle={tooltipStyle}
                   />
                   <Line
                     type="monotone"
@@ -157,19 +159,19 @@ const RevenueStats: React.FC = () => {
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0ee" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) => new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
-                    tick={{ fontSize: 11, fill: '#999' }}
+                    tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
                     axisLine={false}
                     tickLine={false}
                   />
-                  <YAxis tick={{ fontSize: 11, fill: '#999' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     formatter={(v: unknown) => [Number(v), 'Đơn hàng']}
                     labelFormatter={(label) => fmtDate(label)}
-                    contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }}
+                    contentStyle={tooltipStyle}
                   />
                   <Bar dataKey="count" fill={CHART_COLORS.blue} radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -179,18 +181,18 @@ const RevenueStats: React.FC = () => {
 
           {/* Revenue data table */}
           {chartData.length > 0 && (
-            <div style={{ background: '#fff', border: '1px solid #e8e8e6', borderRadius: 14, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #e8e8e6' }}>
-                <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: '#111' }}>
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
                   Chi tiết theo ngày
                 </h3>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: '#f8f8f7' }}>
+                    <tr style={{ background: 'var(--bg-secondary)' }}>
                       {['Ngày', 'Số đơn', 'Doanh thu'].map((h) => (
-                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#999', letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: '1px solid #e8e8e6' }}>
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
                           {h}
                         </th>
                       ))}
@@ -198,9 +200,9 @@ const RevenueStats: React.FC = () => {
                   </thead>
                   <tbody>
                     {[...chartData].reverse().map((row, i) => (
-                      <tr key={row.date} style={{ borderBottom: i < chartData.length - 1 ? '1px solid #f2f1ee' : 'none' }}>
-                        <td style={{ padding: '11px 16px', fontSize: 13, color: '#555' }}>{fmtDate(row.date)}</td>
-                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 600, color: '#111' }}>{row.count}</td>
+                      <tr key={row.date} style={{ borderBottom: i < chartData.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '11px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>{fmtDate(row.date)}</td>
+                        <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{row.count}</td>
                         <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 700, color: '#1db954' }}>{fmtCurrency(row.revenue)}</td>
                       </tr>
                     ))}

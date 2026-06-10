@@ -53,12 +53,12 @@ const AdminLayout: React.FC = () => {
   const isStatsActive = location.pathname.startsWith('/admin/statistics');
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#f8f8f7', fontFamily: 'Inter, DM Sans, system-ui, sans-serif' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-secondary)', fontFamily: 'Inter, DM Sans, system-ui, sans-serif' }}>
       {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
       <aside style={{
         width: 240,
-        background: '#fff',
-        borderRight: '1px solid #e8e8e6',
+        background: 'var(--bg-card)',
+        borderRight: '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
@@ -70,19 +70,19 @@ const AdminLayout: React.FC = () => {
           title="Mở trang chủ (tab mới)"
           style={{
             padding: '20px 20px',
-            borderBottom: '1px solid #e8e8e6',
+            borderBottom: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
             cursor: 'pointer',
           }}
         >
-          <Disc3 size={28} strokeWidth={1.5} style={{ color: '#111' }} />
+          <Disc3 size={28} strokeWidth={1.5} style={{ color: 'var(--text-primary)' }} />
           <div>
-            <p style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em', color: '#111' }}>
+            <p style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
               Record Store
             </p>
-            <p style={{ fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>
+            <p style={{ fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>
               Admin Panel
             </p>
           </div>
@@ -105,22 +105,22 @@ const AdminLayout: React.FC = () => {
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: '0.01em',
-                color: isActive ? '#fff' : '#555',
-                background: isActive ? '#111' : 'transparent',
+                color: isActive ? 'var(--text-inverse)' : 'var(--text-secondary)',
+                background: isActive ? 'var(--text-primary)' : 'transparent',
                 transition: 'all 0.15s ease',
               })}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement;
-                if (!el.className.includes('active') && el.style.background !== 'rgb(17, 17, 17)') {
-                  el.style.background = '#f2f1ee';
-                  el.style.color = '#111';
+                if (el.style.background !== 'var(--text-primary)') {
+                  el.style.background = 'var(--bg-secondary)';
+                  el.style.color = 'var(--text-primary)';
                 }
               }}
               onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLElement;
-                if (el.style.background !== 'rgb(17, 17, 17)') {
+                if (el.style.background !== 'var(--text-primary)') {
                   el.style.background = 'transparent';
-                  el.style.color = '#555';
+                  el.style.color = 'var(--text-secondary)';
                 }
               }}
             >
@@ -132,7 +132,7 @@ const AdminLayout: React.FC = () => {
           {/* ── Statistics Group ────────────────────────────────────────────── */}
           <div style={{ marginTop: 8 }}>
             <div style={{ padding: '0 4px 4px', marginBottom: 2 }}>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#bbb' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                 Analytics
               </span>
             </div>
@@ -151,21 +151,21 @@ const AdminLayout: React.FC = () => {
                 cursor: 'pointer',
                 fontSize: 13,
                 fontWeight: 600,
-                color: isStatsActive ? '#111' : '#555',
-                background: isStatsActive ? '#f2f1ee' : 'transparent',
+                color: isStatsActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                background: isStatsActive ? 'var(--bg-secondary)' : 'transparent',
                 fontFamily: 'inherit',
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 if (!isStatsActive) {
-                  (e.currentTarget as HTMLElement).style.background = '#f2f1ee';
-                  (e.currentTarget as HTMLElement).style.color = '#111';
+                  (e.currentTarget as HTMLElement).style.background = 'var(--bg-secondary)';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isStatsActive) {
                   (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  (e.currentTarget as HTMLElement).style.color = '#555';
+                  (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
                 }
               }}
             >
@@ -176,7 +176,7 @@ const AdminLayout: React.FC = () => {
                 style={{
                   transition: 'transform 0.25s ease',
                   transform: statsOpen ? 'rotate(180deg)' : 'none',
-                  color: '#999',
+                  color: 'var(--text-muted)',
                 }}
               />
             </button>
@@ -203,7 +203,7 @@ const AdminLayout: React.FC = () => {
                       textDecoration: 'none',
                       fontSize: 12.5,
                       fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#1db954' : '#666',
+                      color: isActive ? '#1db954' : 'var(--text-secondary)',
                       background: isActive ? 'rgba(29,185,84,0.1)' : 'transparent',
                       borderLeft: isActive ? '2px solid #1db954' : '2px solid transparent',
                       transition: 'all 0.15s ease',
@@ -211,15 +211,15 @@ const AdminLayout: React.FC = () => {
                     onMouseEnter={(e) => {
                       const el = e.currentTarget as HTMLElement;
                       if (!el.style.color.includes('29,185,84') && el.style.color !== 'rgb(29, 185, 84)') {
-                        el.style.background = '#f2f1ee';
-                        el.style.color = '#111';
+                        el.style.background = 'var(--bg-secondary)';
+                        el.style.color = 'var(--text-primary)';
                       }
                     }}
                     onMouseLeave={(e) => {
                       const el = e.currentTarget as HTMLElement;
                       const isActive = el.style.borderLeftColor === 'rgb(29, 185, 84)';
                       el.style.background = isActive ? 'rgba(29,185,84,0.1)' : 'transparent';
-                      el.style.color = isActive ? '#1db954' : '#666';
+                      el.style.color = isActive ? '#1db954' : 'var(--text-secondary)';
                     }}
                   >
                     <span style={{ opacity: 0.7 }}>{item.icon}</span>
@@ -232,7 +232,7 @@ const AdminLayout: React.FC = () => {
         </nav>
 
         {/* Logout */}
-        <div style={{ padding: '12px 10px', borderTop: '1px solid #e8e8e6' }}>
+        <div style={{ padding: '12px 10px', borderTop: '1px solid var(--border)' }}>
           <button
             onClick={handleLogout}
             style={{
@@ -261,7 +261,7 @@ const AdminLayout: React.FC = () => {
       </aside>
 
       {/* ── Main Content ─────────────────────────────────────────────────────── */}
-      <main style={{ flex: 1, overflowY: 'auto', background: '#f8f8f7' }}>
+      <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg-secondary)' }}>
         <div style={{ padding: '32px 36px', minHeight: '100%' }}>
           <Outlet />
         </div>

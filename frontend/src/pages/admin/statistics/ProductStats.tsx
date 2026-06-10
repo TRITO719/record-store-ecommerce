@@ -76,6 +76,8 @@ const ProductStats: React.FC = () => {
   const totalSold = topProducts.reduce((s, p) => s + p.totalQuantity, 0);
   const totalRevenue = topProducts.reduce((s, p) => s + p.totalRevenue, 0);
 
+  const tooltipStyle = { borderRadius: 10, border: '1px solid var(--border)', fontSize: 12, background: 'var(--bg-card)', color: 'var(--text-primary)' };
+
   return (
     <div>
       <StatsPageHeader
@@ -126,12 +128,12 @@ const ProductStats: React.FC = () => {
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={barData} layout="vertical" margin={{ top: 0, right: 20, left: 10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0ee" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: '#999' }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11, fill: '#555' }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
                     <Tooltip
                       formatter={(value: unknown) => [String(value), 'Đã bán']}
-                      contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }}
+                      contentStyle={tooltipStyle}
                     />
                     <Bar dataKey="qty" fill={CHART_COLORS.amber} radius={[0, 4, 4, 0]} />
                   </BarChart>
@@ -151,8 +153,8 @@ const ProductStats: React.FC = () => {
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e8e8e6', fontSize: 12 }} />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -160,9 +162,9 @@ const ProductStats: React.FC = () => {
           </div>
 
           {/* Product ranking table */}
-          <div style={{ background: '#fff', border: '1px solid #e8e8e6', borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #e8e8e6' }}>
-              <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: '#111' }}>
+          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
                 Bảng xếp hạng sản phẩm
               </h3>
             </div>
@@ -172,9 +174,9 @@ const ProductStats: React.FC = () => {
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ background: '#f8f8f7' }}>
+                    <tr style={{ background: 'var(--bg-secondary)' }}>
                       {['#', 'Sản phẩm', 'Danh mục', 'Giá', 'Đã bán', 'Doanh thu', 'Đơn hàng'].map((h) => (
-                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: '1px solid #e8e8e6' }}>
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
                           {h}
                         </th>
                       ))}
@@ -182,27 +184,27 @@ const ProductStats: React.FC = () => {
                   </thead>
                   <tbody>
                     {topProducts.map((item, i) => (
-                      <tr key={item.productId} style={{ borderBottom: i < topProducts.length - 1 ? '1px solid #f2f1ee' : 'none' }}>
-                        <td style={{ padding: '11px 14px', fontSize: 13, fontWeight: 700, color: i < 3 ? '#1db954' : '#bbb' }}>
+                      <tr key={item.productId} style={{ borderBottom: i < topProducts.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                        <td style={{ padding: '11px 14px', fontSize: 13, fontWeight: 700, color: i < 3 ? '#1db954' : 'var(--text-muted)' }}>
                           #{i + 1}
                         </td>
                         <td style={{ padding: '11px 14px' }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{item.product?.title || `SP #${item.productId}`}</p>
-                          <p style={{ fontSize: 11, color: '#999' }}>{item.product?.artist}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.product?.title || `SP #${item.productId}`}</p>
+                          <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.product?.artist}</p>
                         </td>
                         <td style={{ padding: '11px 14px' }}>
                           <span style={{
                             fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
                             padding: '2px 8px', borderRadius: 4,
-                            background: '#f2f1ee', color: '#666',
+                            background: 'var(--bg-secondary)', color: 'var(--text-secondary)',
                           }}>
                             {item.product?.category || '-'}
                           </span>
                         </td>
-                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#555' }}>{fmtCurrency(item.product?.price ?? 0)}</td>
-                        <td style={{ padding: '11px 14px', fontSize: 14, fontWeight: 700, color: '#111' }}>{item.totalQuantity}</td>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-secondary)' }}>{fmtCurrency(item.product?.price ?? 0)}</td>
+                        <td style={{ padding: '11px 14px', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{item.totalQuantity}</td>
                         <td style={{ padding: '11px 14px', fontSize: 13, fontWeight: 700, color: '#1db954' }}>{fmtCurrency(item.totalRevenue)}</td>
-                        <td style={{ padding: '11px 14px', fontSize: 13, color: '#555' }}>{item.orderCount}</td>
+                        <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-secondary)' }}>{item.orderCount}</td>
                       </tr>
                     ))}
                   </tbody>

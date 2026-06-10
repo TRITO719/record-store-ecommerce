@@ -29,7 +29,7 @@ const OrderSuccess: React.FC = () => {
               visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
             }`}
           >
-            <CheckCircle size={64} strokeWidth={1} className="text-black" />
+            <CheckCircle size={64} strokeWidth={1} className="text-accent" />
           </div>
         </div>
 
@@ -39,28 +39,28 @@ const OrderSuccess: React.FC = () => {
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <span className="text-[10px] font-bold tracking-[0.4em] uppercase text-gray-400 mb-4 block">
+          <span className="text-[10px] font-bold tracking-[0.4em] uppercase text-muted mb-4 block">
             Đặt hàng thành công
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-wide font-display mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold uppercase tracking-wide font-display mb-4 text-primary">
             Cảm ơn bạn!
           </h1>
-          <p className="text-sm text-gray-500 font-sans leading-relaxed mb-2">
+          <p className="text-sm text-secondary font-sans leading-relaxed mb-2">
             Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.
           </p>
-          <p className="text-sm text-gray-500 font-sans">
+          <p className="text-sm text-secondary font-sans">
             Chúng tôi sẽ gửi email xác nhận sớm nhất có thể.
           </p>
         </div>
 
         {/* Order Code */}
         <div
-          className={`my-10 py-6 px-8 bg-zinc-50 border border-zinc-200 transition-all duration-500 delay-[400ms] ${
+          className={`my-10 py-6 px-8 bg-card border border-token text-primary transition-all duration-500 delay-[400ms] ${
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-2">Mã đơn hàng</p>
-          <p className="text-2xl font-bold font-display tracking-widest">{orderCode}</p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-muted mb-2">Mã đơn hàng</p>
+          <p className="text-2xl font-bold font-display tracking-widest text-primary">{orderCode}</p>
         </div>
 
         {/* Info boxes */}
@@ -69,15 +69,15 @@ const OrderSuccess: React.FC = () => {
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <div className="border border-zinc-200 p-5">
-            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-2">Giao hàng</p>
-            <p className="text-xs font-sans text-gray-600 leading-relaxed">
+          <div className="border border-token bg-card p-5 text-primary">
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted mb-2">Giao hàng</p>
+            <p className="text-xs font-sans text-secondary leading-relaxed">
               Dự kiến 3–5 ngày làm việc
             </p>
           </div>
-          <div className="border border-zinc-200 p-5">
-            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 mb-2">Hỗ trợ</p>
-            <p className="text-xs font-sans text-gray-600 leading-relaxed">
+          <div className="border border-token bg-card p-5 text-primary">
+            <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted mb-2">Hỗ trợ</p>
+            <p className="text-xs font-sans text-secondary leading-relaxed">
               support@recordstore.vn
             </p>
           </div>
@@ -91,13 +91,32 @@ const OrderSuccess: React.FC = () => {
         >
           <Link
             to="/"
-            className="bg-black text-white px-10 py-4 uppercase tracking-widest text-[10px] font-bold hover:bg-zinc-800 transition-colors font-sans"
+            className="px-10 py-4 uppercase tracking-widest text-[10px] font-bold transition-all duration-300 font-sans text-center"
+            style={{
+              background: 'var(--accent)',
+              color: '#000',
+              boxShadow: 'var(--shadow-accent)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-dim)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--accent)';
+            }}
           >
             Về trang chủ
           </Link>
           <Link
             to="/vinyl"
-            className="border border-black text-black px-10 py-4 uppercase tracking-widest text-[10px] font-bold hover:bg-black hover:text-white transition-all duration-300 font-sans"
+            className="border border-token px-10 py-4 uppercase tracking-widest text-[10px] font-bold transition-all duration-300 font-sans bg-card text-primary text-center"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
           >
             Tiếp tục mua sắm
           </Link>

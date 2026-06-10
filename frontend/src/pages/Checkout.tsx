@@ -192,14 +192,7 @@ const Checkout: React.FC = () => {
       }
 
       toast.success('Đặt hàng thành công!', {
-        style: {
-          borderRadius: '0px',
-          background: '#000',
-          color: '#fff',
-          fontSize: '10px',
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-        },
+        className: 'toast-custom',
       });
 
       navigate('/order-success', { state: { orderId: result?.order?.id } });
@@ -215,15 +208,15 @@ const Checkout: React.FC = () => {
   };
 
   const inputClass = (field: keyof FormErrors) =>
-    `border p-3 w-full font-sans text-sm focus:outline-none transition-colors ${
+    `border p-3 w-full font-sans text-sm text-primary focus:outline-none transition-colors ${
       errors[field]
-        ? 'border-red-500 bg-red-50'
-        : 'border-zinc-200 focus:border-black'
+        ? 'border-red-500 bg-red-500/10'
+        : 'border-token bg-card focus:border-token-strong'
     }`;
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-12 md:py-20 w-full">
-      <h1 className="text-3xl font-display uppercase font-bold text-black mb-10 tracking-widest">
+    <div className="max-w-[1200px] mx-auto px-6 py-12 md:py-20 w-full text-primary">
+      <h1 className="text-3xl font-display uppercase font-bold text-primary mb-10 tracking-widest">
         Thanh toán
       </h1>
 
@@ -233,7 +226,7 @@ const Checkout: React.FC = () => {
           <form onSubmit={handleSubmit} noValidate className="space-y-8">
             {/* Shipping info */}
             <section>
-              <h2 className="text-lg font-bold uppercase font-display mb-6 pb-2 border-b border-rs-border tracking-wider">
+              <h2 className="text-lg font-bold uppercase font-display mb-6 pb-2 border-b border-token tracking-wider">
                 Thông tin giao hàng
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,7 +314,7 @@ const Checkout: React.FC = () => {
 
             {/* Payment method */}
             <section>
-              <h2 className="text-lg font-bold uppercase font-display mb-6 pb-2 border-b border-rs-border tracking-wider">
+              <h2 className="text-lg font-bold uppercase font-display mb-6 pb-2 border-b border-token tracking-wider">
                 Phương thức thanh toán
               </h2>
               <div className="space-y-3">
@@ -332,7 +325,7 @@ const Checkout: React.FC = () => {
                 ].map(({ value, label }) => (
                   <label
                     key={value}
-                    className="flex items-center gap-3 border border-zinc-200 p-4 cursor-pointer hover:bg-zinc-50 transition-colors"
+                    className="flex items-center gap-3 border border-token p-4 cursor-pointer hover:bg-secondary bg-card text-primary transition-colors"
                   >
                     <input
                       type="radio"
@@ -340,7 +333,7 @@ const Checkout: React.FC = () => {
                       value={value}
                       checked={formData.payment === value}
                       onChange={handleChange}
-                      className="accent-black"
+                      style={{ accentColor: 'var(--accent)' }}
                     />
                     <span className="text-sm font-sans">{label}</span>
                   </label>
@@ -351,7 +344,22 @@ const Checkout: React.FC = () => {
             <button
               type="submit"
               disabled={isSubmitting || selectedItems.length === 0}
-              className="w-full bg-black text-white py-4 uppercase tracking-widest text-sm font-bold hover:bg-zinc-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-4 uppercase tracking-widest text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: 'var(--accent)',
+                color: '#000',
+                boxShadow: 'var(--shadow-accent)',
+              }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.background = 'var(--accent-dim)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.background = 'var(--accent)';
+                }
+              }}
             >
               {isSubmitting ? 'Đang xử lý...' : 'Xác nhận đặt hàng'}
             </button>
@@ -359,18 +367,19 @@ const Checkout: React.FC = () => {
         </div>
 
         {/* ── Order Summary ────────────────────────────────────────────────── */}
-        <div className="w-full lg:w-1/3 bg-zinc-50 p-8 h-fit border border-zinc-200">
+        <div className="w-full lg:w-1/3 bg-card p-8 h-fit border border-token text-primary">
           <h2 className="text-lg font-bold uppercase font-display mb-4 tracking-wider">
             Tóm tắt đơn hàng
           </h2>
 
           {/* Select all */}
-          <label className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200 cursor-pointer group">
+          <label className="flex items-center gap-3 mb-4 pb-4 border-b border-token cursor-pointer group">
             <input
               type="checkbox"
               checked={isAllSelected}
               onChange={toggleAll}
-              className="w-4 h-4 accent-black cursor-pointer"
+              className="w-4 h-4 cursor-pointer"
+              style={{ accentColor: 'var(--accent)' }}
             />
             <span className="text-[10px] font-bold uppercase tracking-widest group-hover:opacity-60 transition-opacity">
               Chọn tất cả ({cartItems.length} sản phẩm)
@@ -391,24 +400,25 @@ const Checkout: React.FC = () => {
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => toggleItem(item.id)}
-                    className="w-4 h-4 accent-black cursor-pointer flex-shrink-0"
+                    className="w-4 h-4 cursor-pointer flex-shrink-0"
+                    style={{ accentColor: 'var(--accent)' }}
                   />
                   <img
                     src={item.imgUrl}
                     alt={item.title}
-                    className="w-12 h-12 object-cover bg-white flex-shrink-0"
+                    className="w-12 h-12 object-cover bg-secondary border border-token flex-shrink-0"
                   />
                   <div className="flex-grow min-w-0">
                     <p className="text-[11px] font-bold uppercase tracking-wider truncate">
                       {item.title}
                     </p>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">
+                    <p className="text-[10px] text-muted uppercase tracking-widest">
                       x{item.quantity}
                     </p>
                   </div>
                   <span
                     className={`font-semibold text-sm font-sans whitespace-nowrap ${
-                      isSelected ? '' : 'line-through text-gray-400'
+                      isSelected ? '' : 'line-through text-muted'
                     }`}
                   >
                     ${(item.price * item.quantity).toFixed(2)}
@@ -418,19 +428,19 @@ const Checkout: React.FC = () => {
             })}
           </div>
 
-          <div className="border-t border-gray-200 pt-4 space-y-2 mb-4">
-            <div className="flex justify-between text-sm font-sans text-gray-500">
+          <div className="border-t border-token pt-4 space-y-2 mb-4">
+            <div className="flex justify-between text-sm font-sans text-secondary">
               <span>Tạm tính ({selectedItems.length} sản phẩm)</span>
               <span>${totalPrice.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm font-sans text-gray-500">
+            <div className="flex justify-between text-sm font-sans text-secondary">
               <span>Giao hàng</span>
-              <span className="text-black font-bold text-xs uppercase tracking-wider">
+              <span className="text-accent font-bold text-xs uppercase tracking-wider">
                 Miễn phí
               </span>
             </div>
           </div>
-          <div className="border-t border-gray-200 pt-4 flex justify-between font-bold text-lg font-sans">
+          <div className="border-t border-token pt-4 flex justify-between font-bold text-lg font-sans">
             <span>Tổng cộng</span>
             <span>${totalPrice.toFixed(2)}</span>
           </div>

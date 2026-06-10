@@ -34,15 +34,15 @@ const AdminUsers: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-rs-border pb-4">
-        <h1 className="text-3xl font-display font-bold uppercase tracking-tight mb-2">Quản lý Khách hàng</h1>
-        <p className="text-[11px] uppercase tracking-widest text-gray-500">Danh sách tài khoản đã đăng ký</p>
+      <div className="pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        <h1 className="text-3xl font-display font-bold uppercase tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>Quản lý Khách hàng</h1>
+        <p className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>Danh sách tài khoản đã đăng ký</p>
       </div>
 
-      <div className="bg-white border border-rs-border overflow-x-auto">
+      <div className="overflow-x-auto" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
         <table className="w-full text-left">
           <thead>
-            <tr className="text-[10px] uppercase tracking-[0.2em] text-gray-500 border-b border-rs-border bg-rs-gray-light">
+            <tr className="text-[10px] uppercase tracking-[0.2em]" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
               <th className="p-5 font-bold">ID / Tên</th>
               <th className="p-5 font-bold">Email</th>
               <th className="p-5 font-bold">Ngày tham gia</th>
@@ -50,22 +50,22 @@ const AdminUsers: React.FC = () => {
               <th className="p-5 font-bold text-right">Hành động</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody className="text-sm" style={{ color: 'var(--text-primary)' }}>
             {users.map((item) => (
-              <tr key={item.id} className="border-b border-rs-border last:border-0 hover:bg-rs-gray-light/50">
+              <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td className="p-5">
                   <p className="font-bold mb-1">{item.fullName || 'Chưa cập nhật'}</p>
-                  <p className="text-[10px] text-gray-500 tracking-widest">ID: {item.id.substring(0, 8)}...</p>
+                  <p className="text-[10px] tracking-widest" style={{ color: 'var(--text-secondary)' }}>ID: {item.id.substring(0, 8)}...</p>
                 </td>
                 <td className="p-5">{item.email}</td>
                 <td className="p-5">{new Date(item.createdAt).toLocaleDateString()}</td>
                 <td className="p-5">
                   {item.role === 'ADMIN' ? (
-                    <span className="inline-flex items-center gap-1 bg-black text-white px-2 py-1 text-[9px] uppercase tracking-widest font-bold">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-[9px] uppercase tracking-widest font-bold" style={{ background: 'var(--text-primary)', color: 'var(--text-inverse)' }}>
                       <Shield size={10} /> Admin
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 bg-rs-gray-light border border-rs-border px-2 py-1 text-[9px] uppercase tracking-widest font-bold">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-[9px] uppercase tracking-widest font-bold" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                       User
                     </span>
                   )}
@@ -82,7 +82,7 @@ const AdminUsers: React.FC = () => {
             ))}
           </tbody>
         </table>
-        {users.length === 0 && <p className="text-sm text-gray-500 p-5 text-center">Không có người dùng nào.</p>}
+        {users.length === 0 && <p className="text-sm p-5 text-center" style={{ color: 'var(--text-secondary)' }}>Không có người dùng nào.</p>}
       </div>
     </div>
   );

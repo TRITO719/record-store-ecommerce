@@ -44,7 +44,11 @@ const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
-      <Toaster position="bottom-right" toastOptions={{ duration: 2000 }} />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{ duration: 2000 }}
+        containerStyle={{ bottom: '96px' }}
+      />
       <Routes>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
