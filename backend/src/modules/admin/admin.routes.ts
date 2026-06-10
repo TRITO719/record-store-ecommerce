@@ -19,6 +19,6 @@ adminRoutes.post('/upload', upload.single('image'), (req: Request, res: Response
     res.status(400).json({ message: 'No file uploaded' });
     return;
   }
-  const imgUrl = `http://localhost:${env.PORT}/uploads/${req.file.filename}`;
+  const imgUrl = req.file.path;
   res.json({ imgUrl });
 });

@@ -23,4 +23,8 @@ export const env = {
   HF_MODEL: process.env.HF_MODEL || 'google/flan-t5-base',
   SMTP_USER: process.env.SMTP_USER || '',
   SMTP_PASS: process.env.SMTP_PASS || '',
+  CLOUDINARY_CLOUD_NAME: getRequiredEnv('CLOUDINARY_CLOUD_NAME'),
+  CLOUDINARY_API_KEY: getRequiredEnv('CLOUDINARY_API_KEY'),
+  CLOUDINARY_API_SECRET: getRequiredEnv('CLOUDINARY_API_SECRET'),
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
 };

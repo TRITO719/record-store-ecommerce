@@ -3,6 +3,7 @@ import { env } from './env';
 
 export const redis = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: 3,
+  tls: env.REDIS_URL.startsWith('rediss://') ? {} : undefined,
   retryStrategy: (times) => {
     const delay = Math.min(500 * Math.pow(2, times - 1), 10000);
     console.warn(`⚠️ [Redis Retry] Lần ${times} — thử kết nối lại sau ${delay}ms`);

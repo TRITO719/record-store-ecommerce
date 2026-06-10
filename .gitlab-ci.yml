@@ -28,13 +28,3 @@ build_backend:
     - npm install
     - npx prisma generate
 
-# Deploy bằng Docker Compose (Yêu cầu server có cài sẵn gitlab-runner docker)
-deploy_docker:
-  stage: deploy
-  image: docker/compose:latest
-  services:
-    - docker:dind
-  script:
-    - docker-compose up -d --build
-  only:
-    - main
