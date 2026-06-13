@@ -1,427 +1,555 @@
-# 📀 RECORD STORE - FULLSTACK E-COMMERCE
+<p align="center">
+  <img src="https://img.shields.io/badge/🎵-Classic_Records-1DB954?style=for-the-badge&labelColor=000000" alt="Classic Records" />
+</p>
 
-Một ứng dụng web mua sắm đĩa nhạc (Vinyl, CD) và Merchandise hoàn chỉnh từ Frontend tới Backend. Dự án được thiết kế với phong cách tối giản (Minimalism), hiện đại và tập trung vào trải nghiệm mua sắm mượt mà.
+<h1 align="center">Classic Records — Vinyl & Music E-Commerce Platform</h1>
 
----
+<p align="center">
+  A production-grade, full-stack e-commerce platform for vinyl records, CDs, and music merchandise — built with a modern TypeScript stack, containerized with Docker, and designed for real-world operational resilience.
+</p>
 
-## 🛠 Tech Stack (Công nghệ sử dụng)
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-6.0-3178C6?style=flat-square&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Express-5.x-000000?style=flat-square&logo=express&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-15-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Prisma-7.x-2D3748?style=flat-square&logo=prisma&logoColor=white" />
+  <img src="https://img.shields.io/badge/Redis-Cache-DC382D?style=flat-square&logo=redis&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Nginx-Gateway-009639?style=flat-square&logo=nginx&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-8.x-646CFF?style=flat-square&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/Redux_Toolkit-9.x-764ABC?style=flat-square&logo=redux&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/Jest-30-C21325?style=flat-square&logo=jest&logoColor=white" />
+</p>
 
-### Frontend (Giao diện người dùng)
-
-- **Framework**: React 18, TypeScript (Vite).
-- **State Management**: Redux Toolkit (quản lý giỏ hàng, thông tin sản phẩm từ API).
-- **Styling**: Tailwind CSS (Utility-first CSS).
-- **Routing**: React Router v6.
-- **HTTP Client**: Axios.
-- **UI Utilities**: Lucide React (Icons), React Hot Toast (Thông báo).
-
-### Backend (Máy chủ & API)
-
-- **Runtime**: Node.js với TypeScript (`tsx`, `nodemon`).
-- **Framework**: Express.js.
-- **Cơ sở dữ liệu (Database)**: PostgreSQL.
-- **ORM (Kết nối CSDL)**: Prisma (`@prisma/client`, `@prisma/adapter-pg`).
-- **Xác thực (Authentication)**: JWT (JSON Web Token) & Bcryptjs.
-- **Xử lý hình ảnh**: Multer (Tải ảnh trực tiếp lên server).
-
----
-
-## 🌊 Luồng hoạt động (Data Flow / Architecture)
-
-1. **Khởi động ứng dụng**: Ngay khi truy cập trang web (tại `App.tsx`), Frontend sẽ gọi Redux Thunk `fetchProducts` để bắn 1 GET request HTTP tới `http://localhost:3000/api/products`.
-2. **Backend xử lý**: Express Router nhận request, dùng Prisma querying lấy tất cả **Products** từ CSDL PostgreSQL trả về giao diện.
-3. **Phân phối State**: Redux Toolkit `productSlice` lưu trữ toàn bộ sản phẩm và thông tin tồn kho (stock). Các màn hình (Home, Vinyl, CD, Merch, Product Detail) móc nối với Redux qua `useSelector` để render sản phẩm tự động.
-4. **Giỏ hàng (Cart)**: Các mặt hàng thêm vào giỏ được Redux quản lý state tạm thời.
-5. **Thanh toán (Checkout)**:
-   - Khi Submit (chốt đơn), một API dạng POST được gửi về `/api/orders/checkout` kèm payload thông tin khách hàng và số lượng giỏ.
-   - Backend sử dụng cơ chế **Database Transaction**: Kiểm tra đồng thời xem kho có đủ hàng không. Nếu đủ, tiến hành trừ kho trong bảng `Product`, đồng thời ghi một Record hóa đơn vào khóa ngoại bảng `Order` & `OrderItem`.
-   - Frontend nhận phản hồi thành công, làm trống giỏ hàng và chuyển hướng sang trang Hoàn tất.
-
-6. **Xác thực & Phân quyền (Auth & RBAC)**:
-   - Hệ thống sử dụng JWT để định danh người dùng. Khi đăng nhập, Backend trả về một Token được lưu vào `localStorage`.
-   - **Phân quyền**: Người dùng có `role: 'ADMIN'` mới có quyền truy cập vào các API quản trị (`/api/admin/*`) thông qua middleware `verifyAdmin` ở Backend.
-   - Frontend sử dụng React Router để bảo vệ các tuyến đường Admin, chỉ cho phép truy cập khi tài khoản có quyền Admin.
-
-7. **Hệ thống Quản trị (Admin Dashboard)**:
-   - **Thống kê**: Tổng hợp doanh thu từ các đơn hàng `COMPLETED`, đếm số lượng người dùng, sản phẩm và đơn hàng.
-   - **Quản lý Sản phẩm**: Cho phép Thêm/Sửa/Xóa. Tích hợp chức năng **Upload ảnh trực tiếp** từ máy tính lên server thông qua Multer.
-   - **Quản lý Đơn hàng**: Xem danh sách đơn hàng, cập nhật trạng thái (Đang xử lý, Đã gửi, Đã giao, Đã hủy) và xem chi tiết từng món hàng khách đã đặt.
-   - **Đồng bộ dữ liệu (Real-time Sync)**: Mọi thay đổi từ Admin (Thêm sản phẩm mới, thay đổi giá, cập nhật kho) sẽ ngay lập tức kích hoạt lệnh làm mới kho dữ liệu toàn cầu (Global Redux Store), giúp giao diện người mua luôn hiển thị thông tin mới nhất mà không cần tải lại trang.
+<p align="center">
+  <a href="#-quick-start"><strong>Quick Start</strong></a> ·
+  <a href="#-architecture"><strong>Architecture</strong></a> ·
+  <a href="#-key-features"><strong>Features</strong></a> ·
+  <a href="#-system-design-highlights"><strong>System Design</strong></a> ·
+  <a href="#-deployment"><strong>Deployment</strong></a>
+</p>
 
 ---
 
-## 🚀 Hướng dẫn Cài đặt & Chạy dự án (How to Run)
+## 📸 Screenshots & Demo
 
-Để hệ thống hoạt động, bạn cần mở **2 cửa sổ Terminal** chạy song song (1 cái cho Frontend, 1 cái cho Backend).
+### 🌐 Client Experience
+<p align="center">
+  <img src="./.github/screenshots/homepage_desktop.png" width="65%" alt="Homepage Desktop" style="border-radius: 8px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);" />
+  <img src="./.github/screenshots/homepage_mobile.png" width="22%" alt="Homepage Mobile" style="border-radius: 8px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);" />
+</p>
+<p align="center">
+  <em>Homepage Desktop (above-the-fold) and Mobile Responsive views side-by-side</em>
+</p>
 
-### Yêu cầu tiên quyết
+<br />
 
-- Cài đặt **Node.js** (v18 trở lên).
-- Cài đặt **PostgreSQL** và đã tạo một cơ sở dữ liệu trống có tên là `record_store` (bạn có thể tạo bằng phần mềm pgAdmin).
+<p align="center">
+  <img src="./.github/screenshots/chatbot.gif" width="45%" alt="AI Chatbot Support" style="border-radius: 8px;" />
+  <img src="./.github/screenshots/checkout.gif" width="45%" alt="Atomic Checkout Flow" style="border-radius: 8px;" />
+</p>
+<p align="center">
+  <em>Interactive Flows: AI Chatbot Support (Left) & OTP Auth/Atomic Checkout (Right)</em>
+</p>
 
-### Bước 1: Cấu hình và chạy Backend
+### 🔧 Admin & Analytics Dashboard
+<p align="center">
+  <img src="./.github/screenshots/admin_dashboard.png" width="88%" alt="Admin Dashboard Overview" style="border-radius: 8px;" />
+</p>
+<p align="center">
+  <em>Admin Analytics Dashboard — Revenue trends, order statistics, and real-time inventory tracking</em>
+</p>
 
-Mở Terminal, đi hướng tới thư mục `backend/`:
+<details>
+  <summary>🔍 View More Screenshots (Details & Forms)</summary>
+  <br />
+  <p align="center">
+    <img src="./.github/screenshots/otp_verification.png" width="45%" />
+    <img src="./.github/screenshots/product_crud.png" width="45%" />
+  </p>
+  <p align="center">
+    <em>Security OTP Verification (Left) and Admin Inventory CRUD (Right)</em>
+  </p>
+</details>
+
+---
+
+## 📖 Project Overview
+
+### The Problem
+
+Independent record stores and music retailers lack affordable, purpose-built e-commerce solutions. Generic platforms don't cater to the unique catalog structure of music products (artist, format, genre) or the niche community expectations around vinyl collecting.
+
+### The Solution
+
+**Classic Records** is a domain-specific e-commerce platform designed for music retailers selling vinyl records, CDs, and merchandise. It provides a complete purchasing flow for customers and a data-driven admin dashboard for store operators.
+
+### Target Users
+
+| Persona | Needs |
+|---------|-------|
+| **Customers** | Browse catalog by format (Vinyl/CD/Merch), search products, manage cart, checkout with order tracking |
+| **Store Admins** | Manage inventory, process orders, monitor revenue analytics, manage user accounts |
+
+### Key Capabilities
+
+- Full authentication flow with **email OTP verification** and password reset
+- Real-time inventory management with **atomic database transactions**
+- **Redis caching layer** with graceful PostgreSQL fallback
+- **5-service Docker Compose** deployment with health checks and restart policies
+- Admin analytics dashboard with **5 statistical dimensions** (Revenue, Orders, Products, Users, Inventory)
+- Integrated **AI-powered chatbot** for customer support
+- **Multi-layer retry mechanism** across the entire stack
+- **Rate limiting** (server-side + client-side) for security hardening
+
+---
+
+## ✨ Key Features
+
+### 🛒 Customer Experience
+
+| Feature | Description |
+|---------|-------------|
+| **Authentication** | Register with email OTP verification, login with JWT, password reset via email |
+| **Product Catalog** | Browse by category (Vinyl, CD, Merchandise) with filtering and search |
+| **Product Detail** | Rich product pages with image gallery, stock availability, and quantity selection |
+| **Shopping Cart** | Persistent cart with select-all, per-item selection, and quantity management |
+| **Checkout** | Form-validated checkout with shipping details, stock verification at transaction time |
+| **Order History** | View past orders with status tracking (Pending → Completed → Shipped) |
+| **AI Chatbot** | Integrated conversational assistant powered by LLM APIs |
+| **Dark/Light Theme** | System-wide theme toggle with persistent user preference |
+
+### 🔧 Admin Dashboard
+
+| Feature | Description |
+|---------|-------------|
+| **Dashboard Overview** | KPI cards for revenue, users, products, and orders at a glance |
+| **Product Management** | Full CRUD with direct image upload via Multer |
+| **Order Management** | View, filter, and update order status with detailed line items |
+| **User Management** | View registered users and account details |
+| **Revenue Analytics** | Time-series revenue charts with period filtering (Today/Week/Month/Year/Custom) |
+| **Order Analytics** | Order volume trends, status distribution breakdown |
+| **Product Analytics** | Top-selling products, category performance metrics |
+| **User Analytics** | Registration trends, top customers by spend |
+| **Inventory Analytics** | Stock valuation, low-stock alerts, out-of-stock tracking by category |
+| **Data Export** | Export statistics data for external reporting |
+
+### 🏗️ Infrastructure
+
+| Feature | Description |
+|---------|-------------|
+| **Docker Compose** | 5-service orchestration (API Gateway, Frontend, Backend, PostgreSQL, Redis) |
+| **API Gateway** | Nginx reverse proxy routing `/` → Frontend, `/api/` → Backend |
+| **Redis Cache** | Read-through caching with TTL, automatic invalidation on writes |
+| **CI/CD Pipelines** | GitLab CI (build → test → deploy) and Jenkins (4-stage with retry) |
+| **Health Checks** | Container-level health monitoring with dependency-aware startup ordering |
+| **Rate Limiting** | Tiered rate limits — general (100 req/window) and strict (10 req/window for auth/checkout) |
+
+---
+
+## 🏛️ Architecture
+
+```mermaid
+graph TB
+    subgraph Client
+        Browser["🌐 Browser"]
+    end
+
+    subgraph Docker["Docker Compose Network"]
+        Gateway["🔀 API Gateway<br/>(Nginx)"]
+
+        subgraph Frontend["Frontend Container"]
+            React["⚛️ React 19 + Vite<br/>Redux Toolkit<br/>Tailwind CSS"]
+        end
+
+        subgraph Backend["Backend Container"]
+            Express["🟢 Express 5<br/>TypeScript"]
+            Prisma["Prisma ORM"]
+            Auth["JWT + OTP Auth"]
+            Cache["Cache Layer"]
+            Retry["Retry Engine"]
+            RateLimit["Rate Limiter"]
+        end
+
+        subgraph Data["Data Layer"]
+            PG["🐘 PostgreSQL 15"]
+            Redis["⚡ Redis"]
+        end
+    end
+
+    Browser -->|"HTTP :8080"| Gateway
+    Gateway -->|"/ → :80"| React
+    Gateway -->|"/api/ → :3000"| Express
+    Express --> Prisma --> PG
+    Express --> Cache --> Redis
+    Cache -.->|"Fallback on MISS"| PG
+    Redis -.->|"Graceful Fallback"| PG
+```
+
+### Request Flow
+
+```
+Client Request
+  └─→ Nginx API Gateway (:8080)
+        ├─→ Static Assets → Frontend (Nginx :80)
+        └─→ /api/* → Express Backend (:3000)
+                ├─→ Rate Limit Check
+                ├─→ JWT Authentication
+                ├─→ Redis Cache (HIT → return)
+                ├─→ Cache MISS → PostgreSQL Query
+                ├─→ Cache Result (TTL: 1 hour)
+                └─→ Response
+```
+
+---
+
+## 🧰 Tech Stack
+
+### Frontend
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| [React](https://react.dev/) | 19.x | UI component library |
+| [TypeScript](https://www.typescriptlang.org/) | 6.0 | Type-safe JavaScript |
+| [Vite](https://vitejs.dev/) | 8.x | Build tool and dev server |
+| [Redux Toolkit](https://redux-toolkit.js.org/) | 2.x | Global state management |
+| [React Router](https://reactrouter.com/) | 7.x | Client-side routing |
+| [Tailwind CSS](https://tailwindcss.com/) | 4.x | Utility-first CSS framework |
+| [Axios](https://axios-http.com/) | 1.x | HTTP client with interceptors |
+| [Recharts](https://recharts.org/) | 2.x | Charting library for analytics |
+| [Lucide React](https://lucide.dev/) | 1.x | Icon system |
+
+### Backend
+
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| [Node.js](https://nodejs.org/) | 20.x | JavaScript runtime |
+| [Express](https://expressjs.com/) | 5.x | Web framework |
+| [TypeScript](https://www.typescriptlang.org/) | 6.0 | Type-safe server code |
+| [Prisma](https://www.prisma.io/) | 7.x | Type-safe ORM with migrations |
+| [ioredis](https://github.com/redis/ioredis) | 5.x | Redis client with auto-reconnect |
+| [JSON Web Token](https://github.com/auth0/node-jsonwebtoken) | 9.x | Stateless authentication |
+| [bcryptjs](https://github.com/dcodeIO/bcrypt.js) | 3.x | Password hashing |
+| [Multer](https://github.com/expressjs/multer) | 2.x | Multipart file upload handling |
+| [Nodemailer](https://nodemailer.com/) | 8.x | Email delivery (OTP) |
+| [Jest](https://jestjs.io/) + [ts-jest](https://kulshekhar.github.io/ts-jest/) | 30.x | Unit testing framework |
+
+### Infrastructure
+
+| Technology | Purpose |
+|-----------|---------|
+| [PostgreSQL 15](https://www.postgresql.org/) | Primary relational database |
+| [Redis](https://redis.io/) | In-memory caching layer |
+| [Nginx](https://nginx.org/) | API Gateway / Reverse Proxy |
+| [Docker Compose](https://docs.docker.com/compose/) | Multi-container orchestration |
+| [GitLab CI/CD](https://docs.gitlab.com/ee/ci/) | Continuous integration pipeline |
+| [Jenkins](https://www.jenkins.io/) | Continuous deployment pipeline |
+
+---
+
+## 📂 Repository Structure
+
+```
+record-store-ecommerce/
+│
+├── api-gateway/
+│   └── nginx.conf                  # Reverse proxy routing rules
+│
+├── backend/
+│   ├── prisma/
+│   │   └── schema.prisma           # Database schema (User, Product, Order, OrderItem, Otp)
+│   ├── src/
+│   │   ├── config/                  # Environment, Prisma client, Redis, email transporter
+│   │   ├── middlewares/             # Auth (JWT + RBAC), rate limiting, file upload
+│   │   ├── modules/
+│   │   │   ├── auth/                # Register, login, OTP verify, password reset
+│   │   │   ├── products/            # CRUD + Redis cache layer
+│   │   │   ├── orders/              # Checkout with DB transactions + retry
+│   │   │   ├── admin/               # Admin-only product/order/user management
+│   │   │   ├── statistics/          # Analytics (revenue, orders, products, users, inventory)
+│   │   │   └── chat/                # AI chatbot integration
+│   │   ├── utils/
+│   │   │   └── retry.ts             # Generic retry with exponential backoff
+│   │   ├── __tests__/               # Unit tests (AuthService, OrderService)
+│   │   └── app.ts                   # Express app setup & route registration
+│   ├── Dockerfile
+│   └── package.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/              # Navbar, Footer, ProductCard, ChatBot, ProtectedRoute
+│   │   │   └── admin/               # Admin-specific shared components (StatsUtils)
+│   │   ├── pages/                   # Home, Vinyl, CD, Merch, Cart, Checkout, User, FAQ, etc.
+│   │   │   └── admin/               # AdminDashboard, AdminProducts, AdminOrders, AdminUsers
+│   │   │       └── statistics/      # Revenue, Order, Product, User, Inventory analytics pages
+│   │   ├── store/                   # Redux slices (cart, product, user)
+│   │   ├── services/                # Axios client with retry interceptor
+│   │   ├── layouts/                 # MainLayout, AdminLayout
+│   │   ├── context/                 # React context providers
+│   │   └── types/                   # TypeScript type definitions
+│   ├── Dockerfile                   # Multi-stage build (Node → Nginx)
+│   └── package.json
+│
+├── docker-compose.yml               # 5-service orchestration
+├── Jenkinsfile                       # 4-stage CI/CD pipeline with retry
+├── .gitlab-ci.yml                    # GitLab CI pipeline (build → test → deploy)
+└── README.md
+```
+
+Each backend module follows a **layered architecture** pattern:
+
+```
+module/
+├── *.routes.ts          # Route definitions & middleware binding
+├── *.controller.ts      # HTTP request/response handling
+├── *.service.ts         # Business logic & orchestration
+├── *.repository.ts      # Database access (Prisma queries)
+└── *.cache.ts           # Redis cache operations (where applicable)
+```
+
+---
+
+## 🚀 Quick Start
+
+### Option 1: Docker Compose (Recommended)
+
+Spin up the entire stack with a single command:
+
+```bash
+# Clone the repository
+git clone https://github.com/HungEzz/record-store-ecommerce.git
+cd record-store-ecommerce
+
+# Start all 5 services in detached mode
+docker-compose up -d --build
+
+# Initialize the database schema and seed sample data
+docker exec -it record_store_backend npx prisma db push
+docker exec -it record_store_backend npm run seed
+```
+
+**Access the application:**
+
+| Service | URL |
+|---------|-----|
+| 🌐 Web App (via Gateway) | [http://localhost:8080](http://localhost:8080) |
+| 🔌 API (via Gateway) | [http://localhost:8080/api/products](http://localhost:8080/api/products) |
+| 🐘 PostgreSQL | `localhost:5432` |
+| ⚡ Redis | `localhost:6379` |
+
+**Manage the stack:**
+
+```bash
+docker-compose logs -f           # Stream all logs
+docker-compose logs -f backend   # Stream backend logs only
+docker-compose down              # Stop all services
+docker-compose down -v           # Stop and remove volumes (reset DB)
+```
+
+### Option 2: Manual Setup
+
+**Prerequisites:** Node.js ≥ 20, PostgreSQL 15+, Redis (optional — app falls back to direct DB queries)
+
+#### 1. Backend
 
 ```bash
 cd backend
 npm install
+
+# Configure environment variables
+cp .env.example .env   # Then edit with your DB credentials
 ```
 
-Kiểm tra file `.env` nằm trong thư mục `backend` và đảm bảo URL kết nối tương ứng với tài khoản/mật khẩu PostgreSQL của máy bạn. Ví dụ:
+Required `.env` variables:
 
 ```env
-DATABASE_URL="postgresql://postgres:root@localhost:5432/record_store?schema=public"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/record_store?schema=public"
+JWT_SECRET="your-secret-key"
+REDIS_URL="redis://localhost:6379"
 PORT=3000
 ```
 
-Đẩy cấu trúc bảng Database và tự động nạp dữ liệu đĩa nhạc mẫu vào Database:
-
 ```bash
+# Push schema to database and seed sample data
 npx prisma db push
 npm run seed
+
+# Start the development server
+npm run dev    # → http://localhost:3000
 ```
 
-Khởi động máy chủ Backend:
-
-```bash
-npm run dev
-```
-
-> Server sẽ chạy tại: `http://localhost:3000`
-
-### Bước 2: Chạy Frontend
-
-Giữ nguyên Terminal của Backend chạy ngầm. Hãy mở một Terminal mới và trỏ vào thư mục `frontend/`:
+#### 2. Frontend
 
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev    # → http://localhost:5173
 ```
 
-> Web App giao diện sẽ chạy tại: `http://localhost:5173`
-
-_(Mở liên kết `http://localhost:5173` trên trình duyệt và bắt đầu mua sắm!)_
-
----
-
-## 📁 Cấu trúc thư mục (Project Structure)
-
-Dự án được phân tách rõ ràng theo mô hình Client - Server:
-
-```text
-Ktvtkpm_25_26/
-├── backend/
-│   ├── prisma/             # Cấu trúc CSDL (schema.prisma)
-│   ├── src/
-│   │   ├── index.ts        # Express Server & API logic + Redis cache
-│   │   └── seed.ts         # Script tiêm dữ liệu mẫu vào DB
-│   ├── uploads/            # Thư mục chứa ảnh upload từ Admin
-│   ├── .env                # Biến môi trường (DB, JWT, Redis)
-│   └── package.json
-│
-└── frontend/
-    ├── src/
-    │   ├── components/     # Các thành phần tái sử dụng (Navbar, FilterBar...)
-    │   ├── store/          # Redux Toolkit (cartSlice.ts, productSlice.ts)
-    │   ├── services/       # axios config gọi API về localhost:3000
-    │   ├── pages/          # Các trang React chính
-    │   ├── types/          # Định nghĩa kiểu dữ liệu TS
-    │   └── App.tsx         # Hệ thống Routing
-    └── package.json
-```
-
----
-
-## 🔴 Redis — Hệ thống Cache cho Sản phẩm
-
-### Tại sao dùng Redis?
-
-Dự án sử dụng **Redis** làm tầng cache (**caching layer**) giữa Frontend và PostgreSQL. Thay vì mỗi lần truy cập đều phải query Database, Redis lưu trữ dữ liệu sản phẩm trong bộ nhớ RAM, giúp phản hồi nhanh hơn nhiều lần.
-
-```text
-┌──────────┐     GET /products      ┌───────────┐   Cache HIT    ┌─────────┐
-│ Frontend │  ──────────────────►   │  Express  │  ───────────►  │  Redis  │
-│ (React)  │  ◄──────────────────   │  Server   │  ◄───────────  │ (RAM)   │
-└──────────┘     JSON response      └───────────┘                └─────────┘
-                                         │  Cache MISS
-                                         ▼
-                                    ┌───────────┐
-                                    │PostgreSQL │  ← Chỉ query khi
-                                    │   (Disk)  │    Redis không có data
-                                    └───────────┘
-```
-
-### Yêu cầu: Cài đặt Redis
-
-Redis cần được chạy trước khi khởi động Backend. Chọn **1 trong các cách** sau:
-
-**Cách 1 — Docker (Khuyến nghị):**
+#### 3. Run Tests
 
 ```bash
-docker run -d --name redis -p 6379:6379 redis
-```
-
-**Cách 2 — WSL (Windows Subsystem for Linux):**
-
-```bash
-sudo apt update && sudo apt install redis-server
-redis-server
-```
-
-**Cách 3 — Memurai (Redis cho Windows native):**
-
-- Tải tại: https://www.memurai.com/
-- Cài đặt và chạy, mặc định port 6379.
-
-### Cấu hình
-
-File `backend/.env` chứa URL kết nối Redis:
-
-```env
-REDIS_URL="redis://localhost:6379"
-```
-
-### Redis CRUD — 4 thao tác trên object Product
-
-Dự án demo đầy đủ **4 thao tác CRUD** trên Redis cho object `Product`:
-
-| Thao tác   | Khi nào xảy ra                                                    | Redis Key                       | Mô tả                                                                      |
-| ---------- | ----------------------------------------------------------------- | ------------------------------- | -------------------------------------------------------------------------- |
-| **CREATE** | Admin tạo sản phẩm mới (`POST /api/products`)                     | `products:{id}`                 | Lưu product vào cache, xóa cache danh sách cũ                              |
-| **READ**   | User truy cập danh sách / chi tiết sản phẩm (`GET /api/products`) | `products:all`, `products:{id}` | Đọc từ Redis trước, nếu không có (MISS) thì query PostgreSQL rồi cache lại |
-| **UPDATE** | Admin sửa sản phẩm (`PUT /api/products/:id`)                      | `products:{id}`                 | Cập nhật cache với dữ liệu mới từ DB                                       |
-| **DELETE** | Admin xóa sản phẩm (`DELETE /api/products/:id`)                   | `products:{id}`                 | Xóa key khỏi Redis, invalidate danh sách                                   |
-
-### Cache Flow chi tiết
-
-```text
-GET /api/products (Không có filter)
-  │
-  ├─ Bước 1: Kiểm tra Redis key "products:all"
-  │           ├── CÓ (HIT)  → Trả JSON từ Redis → Kết thúc
-  │           └── KHÔNG (MISS) ↓
-  │
-  ├─ Bước 2: Query PostgreSQL → Lấy toàn bộ products
-  │
-  ├─ Bước 3: Lưu kết quả vào Redis (TTL: 1 giờ)
-  │
-  └─ Bước 4: Trả JSON cho client
-```
-
-```text
-POST /api/products (Admin tạo mới)
-  │
-  ├─ Bước 1: Validate input → Lưu vào PostgreSQL
-  │
-  ├─ Bước 2: redis.SET("products:{id}", product_json) ← REDIS CREATE
-  │
-  ├─ Bước 3: redis.DEL("products:all")  ← Invalidate cache danh sách
-  │
-  └─ Bước 4: Trả product mới cho client
-```
-
-### Kiểm tra Redis hoạt động
-
-Khi chạy Backend, theo dõi console log:
-
-```
-✅ Redis connected successfully                    ← Kết nối thành công
-📦 [Redis HIT] GET /api/products — trả từ cache   ← Đọc từ cache (nhanh)
-🗄️ [Redis MISS] GET /api/products — query PostgreSQL ← Cache trống, query DB
-📦 [Redis CREATE] Cached product #17               ← Tạo mới trong cache
-📦 [Redis UPDATE] Updated cache product #17         ← Cập nhật cache
-📦 [Redis DELETE] Removed product #17 from cache    ← Xóa khỏi cache
-```
-
-### Graceful Fallback
-
-Nếu Redis **không được cài** hoặc **bị ngắt kết nối**, ứng dụng vẫn hoạt động bình thường — tất cả request sẽ đi thẳng vào PostgreSQL. Console sẽ hiện cảnh báo:
-
-```
-⚠️ Redis connection error (app sẽ fallback về PostgreSQL): connect ECONNREFUSED
+cd backend
+npm test                # Run all unit tests
+npm run test:coverage   # Run with coverage report
 ```
 
 ---
 
-## 🐳 Docker & Docker Compose (Containerization)
+## 🧠 System Design Highlights
 
-Dự án đã được thiết lập chạy trên Docker với **5 images (dịch vụ)**, thỏa mãn tiêu chí `Docker All Services` (tối thiểu 5 images) và `Docker Compose` (chạy tối thiểu 3 services), bao gồm cả `API Gateway`.
+### 1. Layered Module Architecture
 
-### Danh sách 5 services (Container):
+Each domain module (auth, products, orders, statistics) is structured into distinct layers: **Routes → Controller → Service → Repository**. This separation enforces single responsibility, makes business logic independently testable, and allows swapping the data layer without touching service code.
 
-1. **api-gateway** (`nginx:alpine`): Đóng vai trò là Reverse Proxy/API Gateway, điều phối request:
-   - Route `/` đi tới `frontend`.
-   - Route `/api/` và `/uploads/` đi tới `backend`.
-2. **frontend** (Custom image từ `nginx:alpine`): Đóng gói React Vite app sau khi đã build tĩnh.
-3. **backend** (Custom image từ `node:18-alpine`): Chạy Express Server, Prisma, logic xử lý và thao tác Redis.
-4. **postgres** (`postgres:15-alpine`): Cơ sở dữ liệu chính.
-5. **redis** (`redis:alpine`): Hệ thống Cache.
+### 2. Atomic Checkout with Database Transactions
 
-### Cách chạy với Docker Compose
+The checkout endpoint wraps the entire operation (stock validation, stock decrement, order creation, line item insertion) in a **single Prisma `$transaction`** block. This guarantees that either all mutations succeed or none do — preventing overselling and partial order states.
 
-1. **Khởi chạy toàn bộ hệ thống** ở chế độ background:
+### 3. JWT Authentication + Email OTP Verification
 
-   ```bash
-   docker-compose up -d --build
-   ```
+- **Registration** → Creates unverified account → Generates cryptographically secure 6-digit OTP (`crypto.randomInt`) → Sends styled HTML email via Nodemailer → User verifies OTP to activate account
+- **Login** → Validates credentials → Issues JWT (7-day expiry) → RBAC middleware (`verifyAdmin`) guards admin routes
+- **Password Reset** → OTP-based flow with anti-enumeration response (always returns generic message regardless of email existence)
+- **Security controls:** OTP cooldown (60s), hourly rate limit (5 OTPs/email/hour), bcrypt hashing for both passwords and OTPs
 
-2. **Khởi tạo Database** (Chạy Prisma migrate và seed data sau khi DB đã lên):
+### 4. Redis Read-Through Cache with Graceful Degradation
 
-   ```bash
-   # Truy cập vào container backend và chạy lệnh khởi tạo
-   docker exec -it record_store_backend npx prisma db push
-   docker exec -it record_store_backend npm run seed
-   ```
+```
+GET /api/products
+  ├─ Redis connected? → Check cache key "products:all"
+  │     ├─ HIT  → Return cached JSON (fast path)
+  │     └─ MISS → Query PostgreSQL → Cache result (TTL: 1h) → Return
+  └─ Redis down? → Query PostgreSQL directly (graceful fallback)
+```
 
-3. **Truy cập ứng dụng:**
-   - **Frontend (Web App)**: Mở trình duyệt tại `http://localhost:8080` (API Gateway sẽ tự động trỏ về UI).
-   - **Backend API**: Có thể gọi qua Gateway tại `http://localhost:8080/api/...`
+Cache invalidation is **write-through**: every product CREATE/UPDATE/DELETE operation updates the corresponding Redis key and invalidates the list cache. The application continues operating normally even when Redis is completely unavailable.
 
-### Các lệnh quản lý hữu ích:
+### 5. Multi-Layer Retry with Exponential Backoff
 
-- Xem log toàn bộ hệ thống: `docker-compose logs -f`
-- Xem log riêng backend: `docker-compose logs -f backend`
-- Dừng hệ thống: `docker-compose down`
-- Dừng hệ thống và xóa cả volume (xóa sạch DB): `docker-compose down -v`
+Retry is implemented at **four layers** of the stack:
+
+| Layer | Mechanism | Scope |
+|-------|-----------|-------|
+| **Docker Compose** | `restart: on-failure` + health checks with `depends_on: condition: service_healthy` | Container lifecycle |
+| **Backend — `withRetry()`** | Generic async retry utility with configurable attempts and backoff | Critical DB transactions (checkout) |
+| **Backend — ioredis** | Built-in `retryStrategy` with exponential backoff (max 10s) | Redis connection recovery |
+| **Frontend — Axios Interceptor** | Automatic retry on 5xx/network errors, excludes 4xx and rate limits | HTTP request resilience |
+
+All retry implementations use **exponential backoff** (`500ms → 1s → 2s → 4s`) with maximum delay caps to prevent thundering herd effects.
+
+### 6. Tiered Rate Limiting
+
+- **General:** 100 requests per 10-second window (all endpoints)
+- **Strict:** 10 requests per 10-second window (login, checkout)
+- **OTP:** 15 requests per 10-second window (OTP verify/resend)
+- **Client-side:** Button disabling on submit to prevent double-clicks; 429 responses surfaced as user-friendly toast notifications
+
+### 7. Admin Analytics Engine
+
+Five dedicated statistics modules with flexible period filtering:
+
+- **Revenue Stats** — Total revenue, completed orders, average order value, daily revenue chart
+- **Order Stats** — Volume trends, status distribution (Pending/Completed/Cancelled), recent orders
+- **Product Stats** — Top sellers by quantity, category performance breakdown
+- **User Stats** — Registration trends, top customers by total spend
+- **Inventory Stats** — Stock valuation, low-stock alerts (≤5 units), out-of-stock tracking, category breakdown
+
+All analytics support period filters (`today`, `week`, `month`, `year`, `custom` date range) and data export.
 
 ---
 
-## 🔁 Retry Mechanism (Tự động thử lại khi gặp lỗi tạm thời)
+## 🚢 Deployment
 
-Hệ thống phân tán như dự án này (5 Docker services giao tiếp với nhau) luôn có khả năng gặp **lỗi tạm thời** (transient failure): mạng bị giật, container chưa khởi động xong, DB đang quá tải... Retry Mechanism tự động thử lại các thao tác đó thay vì báo lỗi ngay cho người dùng.
+### Architecture Overview
 
-### Chiến lược: Exponential Backoff
+The application deploys as 5 Docker containers behind an Nginx API Gateway:
 
-Thay vì retry ngay lập tức (gây thêm tải), hệ thống chờ theo hàm mũ giữa các lần thử:
+```mermaid
+graph LR
+    Internet["🌐 Internet"] -->|":8080"| GW["Nginx API Gateway"]
+    GW -->|"/"| FE["Frontend<br/>nginx:alpine"]
+    GW -->|"/api/"| BE["Backend<br/>node:20-alpine"]
+    GW -->|"/uploads/"| BE
+    BE --> PG["PostgreSQL 15<br/>postgres:15-alpine"]
+    BE --> RD["Redis<br/>redis:alpine"]
 
-```
-Lần 1 thất bại → chờ 500ms  → thử lại
-Lần 2 thất bại → chờ 1000ms → thử lại
-Lần 3 thất bại → chờ 2000ms → thử lại
-Lần 4 thất bại → báo lỗi thực sự (tối đa 8000ms/lần)
-```
-
-### 4 lớp Retry được áp dụng
-
-#### 1. Docker Compose — Healthcheck & Restart Policy
-
-Mỗi service có `healthcheck` riêng. Các service phụ thuộc chỉ khởi động sau khi dependency đã **thực sự sẵn sàng** (không chỉ "đang chạy"). Nếu container crash, `restart: on-failure` tự khởi động lại.
-
-```text
-postgres  ──healthcheck: pg_isready──►  HEALTHY
-redis     ──healthcheck: redis-cli ping──► HEALTHY
-                    │
-                    ▼  (depends_on condition: service_healthy)
-backend   ──healthcheck: GET /api/products──► HEALTHY
-                    │
-                    ▼
-frontend  ──healthcheck: GET :80──► HEALTHY
-                    │
-                    ▼
-api-gateway  (chỉ khởi động sau khi frontend & backend healthy)
+    style GW fill:#009639,color:#fff
+    style FE fill:#61DAFB,color:#000
+    style BE fill:#68A063,color:#fff
+    style PG fill:#4169E1,color:#fff
+    style RD fill:#DC382D,color:#fff
 ```
 
-| Service  | Healthcheck         | Interval | Retries | Start Period |
-| -------- | ------------------- | -------- | ------- | ------------ |
-| postgres | `pg_isready`        | 10s      | 5       | 20s          |
-| redis    | `redis-cli ping`    | 10s      | 5       | 10s          |
-| backend  | `GET /api/products` | 15s      | 5       | 30s          |
-| frontend | `GET :80`           | 10s      | 3       | 15s          |
+### Container Startup Order
 
-#### 2. Backend — `withRetry` Utility (Exponential Backoff)
-
-Hàm tiện ích dùng chung trong toàn backend, chỉ retry lỗi tạm thời — **không** retry lỗi logic ứng dụng (hết hàng, không tìm thấy sản phẩm):
-
-```typescript
-// Dùng cho bất kỳ DB operation nào cần bảo vệ
-const result = await withRetry(
-  () => prisma.$transaction(...),
-  { maxAttempts: 3, baseDelayMs: 500, label: 'checkout transaction' }
-);
-```
-
-Hiện đang bảo vệ **Checkout endpoint** — thao tác quan trọng nhất, mất đơn hàng nếu DB lỗi tạm thời.
-
-#### 3. Backend — Redis Retry (Tự kết nối lại)
-
-ioredis được cấu hình để **tự động kết nối lại** sau khi mất kết nối (không giới hạn), với exponential backoff tối đa 10s/lần:
-
-```text
-Redis mất kết nối
-  → chờ 500ms → thử kết nối lại
-  → chờ 1000ms → thử kết nối lại
-  → chờ 2000ms → thử kết nối lại
-  → ...tối đa 10000ms/lần → tiếp tục thử cho đến khi thành công
-```
-
-Trong thời gian chờ reconnect, mọi request sẽ tự động **fallback về PostgreSQL** — app không bị gián đoạn.
-
-#### 4. Frontend — Axios Retry Interceptor
-
-`api.ts` tự động retry khi nhận lỗi server (5xx) hoặc mạng bị ngắt (network error), **không** retry lỗi logic (4xx, 429):
-
-```text
-Request thất bại
-  ├── 429 (Rate Limit) → Hiện toast cảnh báo, không retry
-  ├── 4xx (lỗi client) → Báo lỗi ngay, không retry
-  ├── 5xx / Network error → Retry với exponential backoff
-  │     Lần 1: chờ 500ms → retry
-  │     Lần 2: chờ 1000ms → retry
-  │     Lần 3: chờ 2000ms → retry
-  │     Hết retry → Hiện toast "Kết nối thất bại"
-  └── Timeout (ECONNABORTED) → Báo lỗi ngay, không retry
-```
-
-### Console Log khi Retry hoạt động
-
-Theo dõi backend logs để thấy retry:
+Docker Compose manages dependencies with health-check-gated startup:
 
 ```
-⚠️ [Retry] checkout transaction thất bại lần 1/3. Thử lại sau 500ms...
-⚠️ [Retry] checkout transaction thất bại lần 2/3. Thử lại sau 1000ms...
-✅ [Retry] checkout transaction thành công ở lần thử 3
+1. PostgreSQL  ─ pg_isready          ─→ HEALTHY
+2. Redis       ─ redis-cli ping      ─→ HEALTHY
+3. Backend     ─ (waits for 1 & 2)   ─→ starts → HEALTHY (GET /api/products)
+4. Frontend    ─ (waits for 3)       ─→ starts → HEALTHY (GET :80)
+5. API Gateway ─ (waits for 3 & 4)   ─→ starts → routes traffic
 ```
 
+### CI/CD Pipelines
+
+**GitLab CI** (`.gitlab-ci.yml`):
 ```
-⚠️ [Redis Retry] Lần 1 — thử kết nối lại sau 500ms
-🔄 [Redis Retry] Đang thử kết nối lại Redis...
-✅ Redis ready — cache layer hoạt động
+build_frontend → build_backend → deploy_docker (main branch only)
 ```
+
+**Jenkins** (`Jenkinsfile`):
+```
+Checkout → Install Dependencies (retry×3) → Build Frontend (retry×3) → Docker Build & Deploy (retry×3)
+```
+
+Both pipelines include retry strategies to handle transient CI infrastructure failures.
+
+### Persistent Volumes
+
+| Volume              | Mount                     | Purpose                                          |
+|---------------------|---------------------------|--------------------------------------------------|
+| `pgdata`            | PostgreSQL data directory | Database persistence across container restarts   |
+| `backend_uploads`   | `/app/uploads` in backend | Uploaded product images persistence              |
 
 ---
 
-## 🤖 CI/CD Pipelines (Automated Deployments)
+## 👥 Team & Contributions
 
-Dự án tích hợp sẵn cấu hình Pipeline để tự động hóa quá trình kiểm thử, build và triển khai, đáp ứng các tiêu chí về **DevOps** và **Automation**.
-
-- **GitLab CI/CD (`.gitlab-ci.yml`)**:
-  - Tự động build Frontend & Backend.
-  - Kiểm tra tính toàn vẹn của mã nguồn.
-  - Sẵn sàng để deploy lên server thông qua GitLab Runner.
-- **Jenkins (`Jenkinsfile`)**:
-  - Pipeline 4 giai đoạn chuyên nghiệp: `Checkout` → `Install` → `Build` → `Docker Deploy`.
-  - **Retry tích hợp**: mỗi stage `npm install`, `npm run build` và `docker-compose up` đều được bọc trong `retry(3)` — tự động thử lại tối đa 3 lần nếu mạng CI flaky hoặc Docker Hub bị chậm.
-  - Giúp quản lý vòng đời phát triển phần mềm một cách tự động.
+| Contributor | Focus Areas                                                                                     |
+|-------------|-------------------------------------------------------------------------------------------------|
+| **HungEzz**    | Backend architecture, Redis caching, Docker & infrastructure, CI/CD pipelines, rate limiting, retry mechanisms, API Gateway configuration, admin statistics & analytics dashboard 
+| **luuvanphat** | Frontend UI/UX, user management, checkout flow, data visualization with Recharts |
+| **ThinChat** | AI chatbot integration, conversational features |
 
 ---
 
-## 🛡️ Rate Limiting (Security & UX)
+## 🗺️ Roadmap
 
-Hệ thống được bảo vệ 2 lớp bởi cơ chế **Rate Limiting** để chống lại các cuộc tấn công Spam và Brute-force, đảm bảo trải nghiệm người dùng mượt mà.
-
-### 1. Server-side (Hậu phương bảo mật)
-
-Sử dụng middleware `express-rate-limit` để kiểm soát lưu lượng truy cập dựa trên IP:
-
-- **General Rate Limit:** 100 requests / 15 phút (Áp dụng toàn bộ hệ thống).
-- **Strict Rate Limit:** 5 requests / 15 phút (Áp dụng cho **Login** và **Checkout**).
-- **Trust Proxy:** Đã được cấu hình để nhận diện đúng IP người dùng ngay cả khi chạy sau Nginx/Docker.
-
-### 2. Client-side (Tiền tuyến trải nghiệm)
-
-- **Submission Blocking:** Nút "Xác nhận đặt hàng" và "Đăng nhập" sẽ bị vô hiệu hóa (`disabled`) ngay khi nhấn để ngăn chặn việc gửi trùng lặp yêu cầu do click quá nhanh (Double-click).
-- **Global Error Handling:** Tích hợp bộ bắt lỗi (Interceptor) trong `api.ts`. Nếu Server trả về lỗi `429 (Too Many Requests)`, ứng dụng sẽ hiển thị thông báo Toast cảnh báo người dùng một cách thân thiện thay vì để ứng dụng bị treo.
+| Phase | Feature | Status |
+|-------|---------|--------|
+| **v1.1** | Payment gateway integration (Stripe/VNPay) | 🔲 Planned |
+| **v1.1** | Full-text search with Elasticsearch | 🔲 Planned |
+| **v1.2** | WebSocket real-time order status updates | 🔲 Planned |
+| **v1.2** | Product reviews and ratings system | 🔲 Planned |
+| **v1.3** | Wishlist and saved items | 🔲 Planned |
+| **v1.3** | Email notification system (order confirmation, shipping updates) | 🔲 Planned |
+| **v2.0** | Microservices decomposition (auth, orders, catalog as independent services) | 🔲 Planned |
+| **v2.1** | Recommendation engine based on purchase history | 🔲 Planned |
+| **v2.1** | Internationalization (i18n) and multi-currency support | 🔲 Planned |
 
 ---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<p align="center">
+  Built with ☕ and 🎵 by the <strong>Classic Records</strong> team.
+</p>

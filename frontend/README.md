@@ -1,324 +1,555 @@
-# Record Store Frontend
+# Classic Records — Frontend
 
-A modern e-commerce platform for vinyl records, CDs, and merchandise built with React, TypeScript, and modern web technologies.
+Single-page application for **Classic Records**, an e-commerce platform for vinyl records, CDs, and music merchandise. Built with React 19, Vite 8, Redux Toolkit, and Tailwind CSS 4.
 
-## 📋 Table of Contents
+---
 
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Features](#features)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Build](#build)
-- [Current Implementation Status](#current-implementation-status)
+## Table of Contents
 
-## 🎯 Overview
+1. [Project Overview](#1-project-overview)
+2. [Tech Stack](#2-tech-stack)
+3. [Frontend Architecture](#3-frontend-architecture)
+4. [Features](#4-features)
+5. [State Management](#5-state-management)
+6. [API Integration](#6-api-integration)
+7. [Folder Structure](#7-folder-structure)
+8. [Environment Variables](#8-environment-variables)
+9. [Running Locally](#9-running-locally)
+10. [Build & Deployment](#10-build--deployment)
+11. [Scripts](#11-scripts)
+12. [Future Improvements](#12-future-improvements)
 
-Record Store is a complete frontend e-commerce application for an online music and merchandise store. It specializes in vinyl records, CDs, and exclusive merchandise with full shopping cart, user authentication UI, and order management features.
+---
 
-**Current Status:** Frontend is feature-complete with mock data. Backend integration is required for production.
+## 1. Project Overview
 
-## 🛠 Tech Stack
+Classic Records is a full-featured record store storefront and admin panel where:
 
-- **Framework:** React 19.x with TypeScript
-- **State Management:** Redux Toolkit
-- **Routing:** React Router v7
-- **Styling:** Tailwind CSS v4
-- **UI Components:** Lucide React (icons)
-- **Notifications:** React Hot Toast
-- **Build Tool:** Vite
-- **HTTP Client:** Axios (prepared for backend)
-- **Package Manager:** npm
+**Customers can:**
+- Browse vinyl records, CDs, and merchandise with search, sort, and filter
+- View detailed product pages with stock awareness
+- Add products to a persistent shopping cart with quantity control
+- Checkout with form validation (supports guest and authenticated users)
+- Register/login with OTP email verification
+- View order history, manage addresses, and update profiles
+- Toggle between light and dark themes
+- Chat with an AI assistant that can search products and add items to cart
 
-## ✨ Features
+**Admins can:**
+- Manage products (CRUD with image upload)
+- Manage orders (view, update status)
+- Manage users (list, role management)
+- View analytics dashboards with interactive charts (revenue, orders, products, users, inventory)
+- Export statistics data to CSV/Excel
 
-### 🛍️ Product & Catalog
-- ✅ Shop by category: Vinyl, CDs, Merchandise
-- ✅ Advanced filtering by artist/brand
-- ✅ Multi-option sorting (Featured, Price, Alphabetical)
-- ✅ Real-time search with suggestions
-- ✅ Detailed product pages
-- ✅ Stock tracking with "Sold Out" indicator
-- ✅ Related products recommendations
-- ✅ Quick add to cart from product grid
+**Target audience:** Music enthusiasts in Vietnam looking for vinyl records, CDs, and music merchandise. The UI is bilingual (Vietnamese labels, English product content).
 
-### 🛒 Shopping Cart
-- ✅ Add/remove products
-- ✅ Update quantities with stock limits
-- ✅ Real-time cart totals
-- ✅ Cart item counter in header
-- ✅ Persistent stock tracking across navigation
+---
 
-### 💳 Checkout & Orders
-- ✅ Form validation (email, phone, address)
-- ✅ Vietnamese phone number regex validation
-- ✅ Order confirmation with order code
-- ✅ Order history display
-- ✅ Delivery timeline information
+## 2. Tech Stack
 
-### 👤 User Account
-- ✅ Login/Register UI
-- ✅ User profile management
-- ✅ Address update
-- ✅ Order history view
-- ✅ Account dashboard
+| Category             | Technology                                                          |
+| -------------------- | ------------------------------------------------------------------- |
+| **UI Library**       | React 19 (with React DOM 19)                                       |
+| **Language**          | TypeScript 6.x (strict mode, ES2023 target)                       |
+| **Build Tool**       | Vite 8 (`@vitejs/plugin-react`)                                   |
+| **Styling**          | Tailwind CSS 4 (Vite plugin) + CSS custom properties design system |
+| **State Management** | Redux Toolkit 2 + React-Redux 9                                   |
+| **Routing**          | React Router DOM 7 (BrowserRouter)                                 |
+| **HTTP Client**      | Axios 1.14 (with interceptors)                                    |
+| **Charts**           | Recharts 2.15 (LineChart, BarChart, PieChart, AreaChart)           |
+| **Icons**            | Lucide React + React Icons (Font Awesome subset)                   |
+| **Notifications**    | React Hot Toast 2.6                                                |
+| **Fonts**            | Google Fonts: Inter, Plus Jakarta Sans, DM Sans                    |
+| **Linting**          | ESLint 9 + typescript-eslint + react-hooks + react-refresh         |
+| **Deployment**       | Docker (multi-stage: Node builder → Nginx)                         |
 
-### 📄 Support Pages
-- ✅ Contact page with interactive OpenStreetMap (TP.HCM)
-- ✅ Shipping & Returns policy
-- ✅ FAQ section with common questions
-- ✅ Business hours and contact details
+---
 
-### 🎨 UI/UX
-- ✅ Fully responsive (mobile, tablet, desktop)
-- ✅ Smooth animations and transitions
-- ✅ Toast notifications for all actions
-- ✅ Loading states
-- ✅ Sticky elements (cart sidebar, navbar)
-- ✅ Accessible navigation
+## 3. Frontend Architecture
 
-## 📁 Project Structure
+### Architectural Layers
+
+The frontend follows a **layered component architecture** with unidirectional data flow:
 
 ```
-src/
-├── components/
-│   ├── FeaturedProducts.tsx      # Product grid with quick add
-│   ├── Footer.tsx                # Footer with navigation links
-│   ├── Navbar.tsx                # Navigation with search
-│   ├── ProductFilterBar.tsx      # Unified filter/sort component
-│   └── ScrollToTop.tsx           # Auto-scroll on route change
-│
-├── pages/
-│   ├── Home.tsx                  # Homepage with hero & featured
-│   ├── Vinyl.tsx                 # Vinyl category with filter/sort
-│   ├── CD.tsx                    # CD category with filter/sort
-│   ├── Merch.tsx                 # Merchandise category with filter/sort
-│   ├── ProductDetail.tsx         # Single product page (stock-aware)
-│   ├── Cart.tsx                  # Shopping cart & order summary
-│   ├── Checkout.tsx              # Checkout form with validation
-│   ├── OrderSuccess.tsx          # Order confirmation page
-│   ├── User.tsx                  # Login/Register/Account dashboard
-│   ├── Contact.tsx               # Contact info & interactive map
-│   ├── ShippingReturns.tsx       # Shipping & returns policy
-│   ├── FAQ.tsx                   # FAQ section
-│   └── Login.tsx                 # Reserved for future use
-│
-├── store/ (Redux State)
-│   ├── cartSlice.ts              # Shopping cart state
-│   ├── productSlice.ts           # Product stock tracking
-│   ├── userSlice.ts              # User auth & profile
-│   └── index.ts                  # Store configuration
-│
-├── data/
-│   └── products.ts               # Mock product database (16 products)
-│
-├── services/
-│   ├── api.ts                    # Axios instance setup
-│   └── productService.ts         # Product API calls (stub)
-│
-├── layouts/
-│   └── MainLayout.tsx            # Main page layout wrapper
-│
-├── types/
-│   └── index.ts                  # TypeScript interfaces
-│
-├── App.tsx                       # Main app with routing
-└── main.tsx                      # Entry point
+                    ┌────────────────────────────────┐
+                    │         React Router           │
+                    │    (App.tsx — route config)     │
+                    └───────────────┬────────────────┘
+                                    │
+                    ┌───────────────▼────────────────┐
+                    │          Layouts               │
+                    │  MainLayout / AdminLayout      │
+                    │  (shell: navbar, footer,       │
+                    │   sidebar, outlet)             │
+                    └───────────────┬────────────────┘
+                                    │
+                    ┌───────────────▼────────────────┐
+                    │           Pages                │
+                    │  (route-level components)      │
+                    │  Home, Cart, Checkout, etc.    │
+                    └───────────────┬────────────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          ▼                         ▼                         ▼
+┌──────────────────┐   ┌──────────────────┐     ┌──────────────────┐
+│   Components     │   │    Redux Store   │     │    Contexts      │
+│  (reusable UI)   │   │ (global state)   │     │ (scoped state)   │
+│  ProductCard,    │   │ cartSlice        │     │ ThemeContext      │
+│  Navbar, Footer  │   │ productSlice     │     │ AccountContext    │
+│  ChatBot, etc.   │   │ userSlice        │     │                  │
+└──────────────────┘   └────────┬─────────┘     └──────────────────┘
+                                │
+                    ┌───────────▼────────────────┐
+                    │     Services (API Layer)   │
+                    │   Axios instance with      │
+                    │   interceptors, retry,     │
+                    │   auto-logout              │
+                    └───────────────┬────────────┘
+                                    │
+                    ┌───────────────▼────────────────┐
+                    │       Backend REST API         │
+                    │     (Express + PostgreSQL)     │
+                    └────────────────────────────────┘
 ```
 
-## 🚀 Installation
+### Data Flow
+
+1. **App bootstrap** → `main.tsx` initializes Redux Provider, ThemeProvider, and subscribes to cart state changes for localStorage persistence.
+2. **Product fetch** → `App.tsx` dispatches `fetchProducts()` on mount via `createAsyncThunk`, populating the global store.
+3. **User interaction** → Components dispatch Redux actions (e.g., `addToCart`, `login`) or call the API service directly.
+4. **API calls** → The Axios instance injects auth tokens, handles retries, and auto-logs out on 401.
+5. **State updates** → Redux reducers update slices → React re-renders connected components.
+6. **Persistence** → Cart state and user sessions are synchronized to `localStorage` on every change.
+
+### Key Design Decisions
+
+- **Dual session architecture** — User and admin sessions are stored separately (`token`/`user` vs `admin_token`/`admin_user`) to prevent conflicts when admin opens the storefront in another tab.
+- **CSS design system over utility-only** — A full design token system (CSS custom properties for colors, radii, shadows, fonts) is defined in `index.css`, providing theme-aware styling across both Tailwind and inline styles.
+- **Context for local state, Redux for global** — Redux manages the three cross-cutting concerns (cart, products, auth). React Context handles theme toggling and account page state that doesn't need to be globally shared.
+
+---
+
+## 4. Features
+
+### Customer Features
+
+#### Product Browsing & Search
+- **Home page** with hero banner carousel (5 slides, auto-play, pause on hover), category cards, trending section, featured collections, and promotional banner
+- **Category pages** (Vinyl, CD, Merch) with search, sort (featured/price/alphabetical), and filter bars
+- **Product detail page** with full-size image, stock display, quantity selector, and add-to-cart
+- **Instant search** in navbar with product suggestions (title + artist matching, max 6 results)
+- **Intersection Observer** scroll-triggered fade-up animations on the home page
+
+#### Shopping Cart
+- **Persistent cart** — survives page refreshes via localStorage + Redux subscription
+- **Quick-add modal** — select quantity before adding, with real-time stock and in-cart quantity checks
+- **Cart page** — quantity adjustment, item removal, item selection for partial checkout
+- **Stock validation** — prevents adding items beyond available stock (`maxAddable = stock − inCartQty`)
+- **Wishlist toggle** (UI-only, heart icon on product cards)
+
+#### Checkout
+- **Guest and authenticated checkout** — autofills name, email, phone, address from user profile when logged in
+- **Selective checkout** — choose which cart items to include in the order (passed via React Router state)
+- **Form validation** — email regex, Vietnamese phone number pattern (`0|+84` prefix), required fields
+- **Post-checkout** — clears cart, refreshes product stock, syncs profile data, navigates to success page
+
+#### Authentication & Account
+- **Multi-tab auth** — OTP verification flow (register → verify OTP → auto-login)
+- **Account page** with tab navigation: Profile, Orders, Addresses, Security (password change), Settings
+- **Order history** — fetched via `AccountContext`, displays items with product images, status badges, and totals
+- **Address management** — CRUD with default address selection, persisted to localStorage
+- **Forgot/reset password** — OTP-based password reset flow
+
+#### Theme & UX
+- **Dark/light theme** — toggleable via context, persisted to localStorage, respects system preference on first visit
+- **Glassmorphism navbar** — transparent on top, blurred glass effect on scroll
+- **Toast notifications** — positioned bottom-right, 2-second duration
+- **Scroll to top** on route change
+- **Mobile responsive** — hamburger menu, responsive grid breakpoints
+
+#### AI Chatbot
+- **Floating chat widget** — fixed position, minimizable, closable, unread count badge
+- **DeepSeek V3.2 integration** — sends message + conversation history + cart context + current path
+- **Cart actions** — AI can add products to cart via action payloads dispatched to Redux
+- **Quick reply buttons** — preset suggestions for common queries
+- **Session persistence** — chat history saved to localStorage, auto-clears after 30 minutes of inactivity
+- **Markdown formatting** — bold text and line breaks rendered in messages
+
+---
+
+### Admin Features
+
+> All admin routes are protected by `ProtectedRoute` which checks `isAdminLoggedIn` + role from Redux.
+
+#### Dashboard
+- **Summary cards** — total revenue, order count, user count, product count
+- **Recent orders table** — clickable order ID (copies to clipboard), customer, date, total, status
+
+#### Product Management
+- **CRUD interface** — create/edit products with title, artist, price, stock, category, description, image URL
+- **Image upload** — via admin upload endpoint
+- **Delete protection** — blocked if product has order items (error toast)
+
+#### Order Management
+- **Paginated order list** — with user details, product line items, totals
+- **Status updates** — change order status (PENDING / COMPLETED / CANCELLED)
+
+#### User Management
+- **User list** — name, email, role, registration date
+- **Role management** — promote/demote users (USER ↔ ADMIN)
+
+#### Statistics Dashboard (5 modules)
+All statistics pages share common infrastructure from `StatsUtils.tsx`:
+
+| Module       | Charts                                     | Features                           |
+| ------------ | ------------------------------------------ | ---------------------------------- |
+| **Revenue**  | Line chart (daily trend), Bar chart (daily) | Summary cards, data table, export |
+| **Orders**   | Line chart, status breakdown               | Period filtering, export           |
+| **Products** | Bar chart (top sellers), Pie chart (category) | Category performance, export    |
+| **Users**    | Area chart (registrations), top customers  | User growth analysis, export       |
+| **Inventory**| Stock levels, low-stock alerts             | Category breakdown, valuation      |
+
+**Shared utilities:**
+- `useStatsData<T>` — custom hook for fetching statistics with period-based filtering (`today`, `week`, `month`, `year`, `custom` date range)
+- `exportToExcel()` — generates CSV with BOM for Excel UTF-8 compatibility, triggered via download button
+- `StatCard`, `ChartCard`, `StatsSkeleton`, `EmptyState`, `OrderStatusBadge` — reusable presentation components
+
+---
+
+## 5. State Management
+
+### Redux Toolkit Store
+
+The store is configured in `store/index.ts` with three slices:
+
+```
+┌──────────────────────────────────────────┐
+│              Redux Store                 │
+├──────────────────────────────────────────┤
+│                                          │
+│  ┌─────────────┐  ┌──────────────────┐  │
+│  │  cartSlice   │  │  productSlice    │  │
+│  │  ─────────── │  │  ────────────    │  │
+│  │  items[]     │  │  items[]         │  │
+│  │              │  │  stock{}         │  │
+│  │  addToCart   │  │  status          │  │
+│  │  remove      │  │                  │  │
+│  │  updateQty   │  │  fetchProducts() │  │
+│  │  clearCart   │  │  (async thunk)   │  │
+│  └─────────────┘  └──────────────────┘  │
+│                                          │
+│  ┌──────────────────────────────────┐   │
+│  │          userSlice               │   │
+│  │  ────────────────────            │   │
+│  │  isLoggedIn / profile            │   │
+│  │  isAdminLoggedIn / adminProfile  │   │
+│  │                                  │   │
+│  │  login / logout / updateProfile  │   │
+│  │  adminLogin / adminLogout        │   │
+│  │  updateAdminProfile              │   │
+│  └──────────────────────────────────┘   │
+└──────────────────────────────────────────┘
+```
+
+### Slice Details
+
+| Slice          | State                          | Persistence Strategy                     |
+| -------------- | ------------------------------ | ---------------------------------------- |
+| **cartSlice**  | `items: CartItem[]`            | Read from `localStorage('cart')` on init. Saved on every change via `store.subscribe()` in `main.tsx`. |
+| **productSlice** | `items`, `stock`, `status`   | Not persisted — fetched from API on app mount via `createAsyncThunk`. Stock map is derived from the product list for O(1) lookups. |
+| **userSlice**  | User + Admin sessions          | Read from `localStorage('token'/'user'/'admin_token'/'admin_user')` on init. Written by login/logout handlers in components (not via subscribe). |
+
+### Dual Session Architecture
+
+The `userSlice` maintains **two independent sessions**:
+
+| Session | localStorage Keys          | Redux State                  | Purpose                        |
+| ------- | -------------------------- | ---------------------------- | ------------------------------ |
+| User    | `token`, `user`            | `isLoggedIn`, `profile`      | Storefront pages (`/account`)  |
+| Admin   | `admin_token`, `admin_user` | `isAdminLoggedIn`, `adminProfile` | Admin panel (`/admin/*`)  |
+
+This prevents the admin session from being overwritten when an admin also browses the storefront as a regular user.
+
+---
+
+## 6. API Integration
+
+### Axios Configuration (`services/api.ts`)
+
+The API layer is a single Axios instance with comprehensive middleware:
+
+```typescript
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  timeout: 10000,
+  headers: { 'Content-Type': 'application/json' },
+});
+```
+
+### Token Handling
+
+The request interceptor resolves the correct token based on the current URL path:
+
+- Pages under `/admin/*` → use `admin_token` from localStorage
+- All other pages → use `token` from localStorage
+
+This ensures admin API calls use the admin JWT while storefront calls use the user JWT.
+
+### Automatic Retry
+
+The response interceptor implements exponential backoff retry for transient failures:
+
+| Config                    | Value                                                          |
+| ------------------------- | -------------------------------------------------------------- |
+| **Retryable statuses**    | `500`, `502`, `503`, `504`                                     |
+| **Network errors**        | Retried (except `ECONNABORTED` timeouts)                       |
+| **Max attempts**          | 3                                                              |
+| **Backoff formula**       | `min(500ms × 2^(attempt-1), 8000ms)` → 500ms, 1s, 2s          |
+| **Non-retryable**         | `401` (auth), `429` (rate limit), `4xx` (client errors)        |
+
+### Session Expiry Handling
+
+On `401` response:
+
+- If on an admin page → clears `admin_token`/`admin_user`, dispatches `adminLogout()`, shows toast
+- If on a storefront page → clears `token`/`user`, dispatches `logout()`, shows toast
+- Uses unique toast IDs (`admin-session-expired-toast`, `session-expired-toast`) to prevent duplicate notifications
+
+### Rate Limit Handling
+
+On `429` response → shows a user-friendly "too many requests" toast without retrying.
+
+### Response Unwrapping
+
+The response interceptor returns `response.data` directly (not the Axios response wrapper), so all API calls receive the parsed JSON body.
+
+---
+
+## 7. Folder Structure
+
+```
+frontend/
+├── public/
+│   ├── cd-icon.svg                 # Favicon
+│   ├── favicon.svg                 # Alternate favicon
+│   └── icons.svg                   # SVG sprite sheet
+├── src/
+│   ├── main.tsx                    # React entry — Redux Provider, ThemeProvider, cart persistence
+│   ├── App.tsx                     # Route definitions (BrowserRouter, MainLayout, AdminLayout)
+│   ├── App.css                     # Legacy Vite scaffold styles (mostly unused)
+│   ├── index.css                   # Design system — tokens, components, animations, theme (600+ lines)
+│   ├── assets/
+│   │   ├── hero.png                # Hero image asset
+│   │   ├── react.svg               # React logo
+│   │   └── vite.svg                # Vite logo
+│   ├── components/
+│   │   ├── Navbar.tsx              # Glassmorphism fixed navbar with search, theme toggle, mobile menu
+│   │   ├── Footer.tsx              # 4-column footer with newsletter, social links, contact info
+│   │   ├── HeroBanner.tsx          # Auto-rotating carousel with vinyl disc animation
+│   │   ├── ProductCard.tsx         # Product card with quick-add modal, wishlist, stock awareness
+│   │   ├── ProductFilterBar.tsx    # Search + sort dropdown + filter pills
+│   │   ├── FeaturedProducts.tsx    # Configurable product grid section with staggered animations
+│   │   ├── ChatBot.tsx             # AI chat widget with DeepSeek integration + cart actions
+│   │   ├── AccountDropdown.tsx     # User menu dropdown with order badge + admin link
+│   │   ├── ProtectedRoute.tsx      # Role-based route guard (checks Redux admin session)
+│   │   ├── ScrollToTop.tsx         # Scrolls to top on route change
+│   │   └── admin/
+│   │       └── StatsUtils.tsx      # Shared stats components: cards, charts, filters, export, skeleton
+│   ├── pages/
+│   │   ├── Home.tsx                # Landing page — hero, categories, featured, trending, promo
+│   │   ├── Vinyl.tsx               # Vinyl records catalog page
+│   │   ├── CD.tsx                  # CDs catalog page
+│   │   ├── Merch.tsx               # Merchandise catalog page
+│   │   ├── ProductDetail.tsx       # Single product page with add-to-cart
+│   │   ├── Cart.tsx                # Shopping cart with quantity controls and selective checkout
+│   │   ├── Checkout.tsx            # Checkout form with validation and order submission
+│   │   ├── OrderSuccess.tsx        # Post-checkout success page
+│   │   ├── User.tsx                # Account page (tabbed: profile, orders, addresses, security, settings)
+│   │   ├── Contact.tsx             # Contact information page
+│   │   ├── ShippingReturns.tsx     # Shipping policy page
+│   │   ├── FAQ.tsx                 # FAQ page
+│   │   ├── PageHeader.tsx          # Reusable page header component
+│   │   └── admin/
+│   │       ├── AdminDashboard.tsx  # Overview — stat cards + recent orders table
+│   │       ├── AdminProducts.tsx   # Product CRUD interface
+│   │       ├── AdminOrders.tsx     # Order management with status updates
+│   │       ├── AdminUsers.tsx      # User list and role management
+│   │       └── statistics/
+│   │           ├── RevenueStats.tsx    # Revenue charts + data table + export
+│   │           ├── OrderStats.tsx      # Order analytics + status breakdown
+│   │           ├── ProductStats.tsx    # Top sellers + category performance
+│   │           ├── UserStats.tsx       # User growth + top customers
+│   │           └── InventoryStats.tsx  # Stock levels + alerts + valuation
+│   ├── store/
+│   │   ├── index.ts                # Store configuration (combineReducers)
+│   │   ├── cartSlice.ts            # Cart state — localStorage persistence, add/remove/update/clear
+│   │   ├── productSlice.ts         # Product catalog — async fetch, stock map
+│   │   └── userSlice.ts            # User + admin sessions — dual localStorage persistence
+│   ├── services/
+│   │   └── api.ts                  # Axios instance — token injection, retry, auto-logout, rate limiting
+│   ├── context/
+│   │   ├── ThemeContext.tsx         # Dark/light theme — localStorage + system preference
+│   │   └── AccountContext.tsx       # Account page state — profile, orders, addresses
+│   └── types/
+│       └── index.ts                # Product and CartItem interfaces
+├── Dockerfile                      # Multi-stage: Node 20 build → Nginx serve
+├── index.html                      # HTML entry point
+├── vite.config.ts                  # Vite + React + Tailwind plugins
+├── tsconfig.json                   # TypeScript project references
+├── tsconfig.app.json               # App TypeScript config (ES2023, strict)
+├── eslint.config.js                # Flat ESLint config (TS + React hooks + React Refresh)
+└── package.json
+```
+
+### Naming Conventions
+
+| Convention           | Example                                    | Purpose                                              |
+| -------------------- | ------------------------------------------ | ---------------------------------------------------- |
+| PascalCase files     | `ProductCard.tsx`, `AdminDashboard.tsx`     | React components (one component per file)            |
+| camelCase files      | `cartSlice.ts`, `api.ts`                   | Non-component modules (slices, services, types)      |
+| Context suffix       | `ThemeContext.tsx`, `AccountContext.tsx`     | React Context providers with `useXxx()` hook exports |
+| Slice suffix         | `cartSlice.ts`, `userSlice.ts`             | Redux Toolkit slices                                 |
+
+---
+
+## 8. Environment Variables
+
+| Variable         | Description                                         | Required | Default                         |
+| ---------------- | --------------------------------------------------- | -------- | ------------------------------- |
+| `VITE_API_URL`   | Backend API base URL (must include `/api` prefix)   | No       | `http://localhost:3000/api`     |
+
+**Docker Compose:** Sets `VITE_API_URL=/api` at build time, so all API calls go through the Nginx gateway on the same origin — no CORS needed.
+
+**Local development:** If the backend runs on `localhost:3000`, the default works out of the box. No `.env` file is required.
+
+**Example `.env` file:**
+
+```env
+VITE_API_URL=http://localhost:3000/api
+```
+
+> **Note:** Vite injects environment variables at build time. Changes to `VITE_API_URL` require a rebuild to take effect.
+
+---
+
+## 9. Running Locally
 
 ### Prerequisites
-- Node.js 18.x or higher
-- npm or yarn
 
-### Steps
+- Node.js ≥ 20
+- Backend API running on `http://localhost:3000`
 
-1. **Navigate to frontend directory:**
-   ```bash
-   cd d:\Ki2_Nam4\software_architecture\BTL_archi\frontend
-   ```
+### Installation
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+cd frontend
+npm install
+```
 
-3. **Start development server:**
-   ```bash
-   npm run dev
-   ```
-   - Opens at `http://localhost:5173`
-   - Hot reload enabled
+### Development Server
 
-## 📖 Usage
-
-### Development
 ```bash
 npm run dev
 ```
 
-### Code Quality
-```bash
-npm run lint
-```
+Starts the Vite dev server with Hot Module Replacement (HMR). Default URL: `http://localhost:5173`.
 
-### Production Build
+### Production Preview
+
 ```bash
 npm run build
-```
-- Output in `dist/` folder
-- Type-checked and optimized
-
-### Preview Build
-```bash
 npm run preview
 ```
 
-## 🔗 Routes
+Builds the production bundle to `dist/` and serves it locally for testing.
 
-| Path | Component | Features |
-|------|-----------|----------|
-| `/` | Home | Hero section, featured products |
-| `/vinyl` | Vinyl | Filter by artist, sort, search |
-| `/cd` | CD | Filter by artist, sort, search |
-| `/merch` | Merch | Filter by brand, sort, search |
-| `/product/:id` | ProductDetail | Stock info, add to cart, related items |
-| `/cart` | Cart | View items, update qty, checkout |
-| `/checkout` | Checkout | Form validation, order summary |
-| `/order-success` | OrderSuccess | Confirmation & order code |
-| `/account` | User | Login/Register/Profile |
-| `/contact` | Contact | Map + contact info |
-| `/shipping-returns` | ShippingReturns | Policy information |
-| `/faq` | FAQ | Common questions |
+---
 
-## 📊 Current Implementation Status
+## 10. Build & Deployment
 
-### ✅ Fully Implemented
-- [x] All product pages with category-specific filtering
-- [x] Filter & Sort unified component (consistent across categories)
-- [x] Product detail page with stock management
-- [x] Shopping cart with quantity control & stock limits
-- [x] Checkout form with comprehensive validation
-- [x] Order confirmation page
-- [x] User login/register UI
-- [x] Account profile and order history display
-- [x] Support pages (Contact, FAQ, Shipping)
-- [x] Responsive design (all screen sizes)
-- [x] Search functionality
-- [x] Redux state management
-- [x] Toast notifications
+### Production Build
 
-### 🟡 Mock/Local Implementation (Requires Backend)
-- **Data Source:** Mock product data in `src/data/products.ts`
-- **Product Catalog:** Static array, no backend API calls
-- **Search:** Mock data search only
-- **Stock Management:** Redux-only (lost on refresh)
-- **User Authentication:** UI-only, no real JWT/session
-- **Checkout:** Simulated with setTimeout
-- **Cart Persistence:** Redux only (lost on refresh)
-- **Order Processing:** No database storage
-
-### ❌ Not Yet Implemented
-- Real backend API integration
-- Persistent user authentication
-- Payment processing
-- Email notifications
-- Image optimization
-- Real inventory management
-- Order tracking
-
-## 🔌 Backend Integration Guide
-
-To connect to a real backend:
-
-### 1. Products API
-Update `src/services/productService.ts` to call real endpoints
-
-### 2. Authentication
-Replace Redux mock login in `src/store/userSlice.ts` with real JWT flow
-
-### 3. Checkout
-Send form data to `/api/orders` endpoint instead of redirecting
-
-### 4. Environment Variables
-Create `.env.local`:
-```
-VITE_API_BASE_URL=http://localhost:3000/api
-```
-
-## 📦 Dependencies
-
-**Core:**
-- react@^19.2.4
-- react-dom@^19.2.4
-- react-router-dom@^7.14.0
-
-**State Management:**
-- @reduxjs/toolkit@^2.11.2
-- react-redux@^9.2.0
-
-**Styling:**
-- tailwindcss@^4.2.2
-
-**UI & Utilities:**
-- lucide-react@^1.7.0 (icons)
-- react-hot-toast@^2.6.0 (notifications)
-- axios@^1.14.0 (HTTP)
-
-## 🎨 Design System
-
-### Colors
-- Primary: Black (`#000`)
-- Light Background: `#f5f5f5`
-- Border: `#e5e5e5`
-- Text: `#333333` / `#666666`
-
-### Typography
-- Display: Custom font for headings
-- Body: System sans-serif
-
-### Responsive Breakpoints
-- Mobile: < 640px
-- Tablet: 640px - 1024px
-- Desktop: > 1024px
-
-## 🐛 Known Issues / Limitations
-
-1. Mock data only - no real products from backend
-2. Redux state - data lost on refresh
-3. No real authentication - session in Redux only
-4. Search limited to mock data
-5. No backend order persistence
-
-## 🚀 Deployment
-
-### Build for production:
 ```bash
 npm run build
 ```
 
-### Deploy:
-- Use `dist/` folder as root
-- Ensure router base path is correct (currently `/`)
-- Set backend API URL in environment
+This runs:
+1. `tsc -b` — TypeScript type checking (no emit, project references)
+2. `vite build` — Bundles, tree-shakes, minifies, and outputs to `dist/`
 
-## 📚 Development Tips
+### Docker Deployment
 
-### Adding a new page:
-1. Create in `src/pages/YourPage.tsx`
-2. Add route to `App.tsx`
-3. Add nav link in `Navbar.tsx` or `Footer.tsx`
+The Dockerfile uses a **multi-stage build**:
 
-### Adding Redux state:
-1. Create slice in `src/store/yourSlice.ts`
-2. Export actions and reducer
-3. Add to `src/store/index.ts`
-4. Use with `useDispatch` and `useSelector`
+```
+┌─────────────────────────────────┐
+│  Stage 1: Builder (node:20-alpine) │
+│  ─────────────────────────────── │
+│  1. npm install                  │
+│  2. VITE_API_URL=/api            │
+│  3. npm run build → dist/       │
+└─────────────────┬───────────────┘
+                  │ COPY dist/
+                  ▼
+┌─────────────────────────────────┐
+│  Stage 2: Runtime (nginx:alpine) │
+│  ─────────────────────────────── │
+│  1. Serve /usr/share/nginx/html │
+│  2. SPA fallback (try_files)    │
+│  3. Expose port 80              │
+└─────────────────────────────────┘
+```
+
+**Key details:**
+- The Nginx config includes `try_files $uri /index.html` for React Router client-side routing support
+- Static assets are hashed by Vite for cache-busting
+- Final image is ~30MB (nginx:alpine + built assets)
+
+### Full-Stack Docker Compose
+
+From the project root:
+
+```bash
+docker-compose up -d --build
+```
+
+The frontend is accessible through the Nginx API gateway at `http://localhost:8080`. API requests to `/api/*` are proxied to the backend container.
 
 ---
 
-**Last Updated:** April 11, 2026  
-**Status:** Frontend Complete | Ready for Backend Integration  
-**University:** Bach Khoa University
+## 11. Scripts
+
+| Script              | Command          | Purpose                                            |
+| ------------------- | ---------------- | -------------------------------------------------- |
+| `npm run dev`       | `vite`           | Start Vite dev server with HMR                     |
+| `npm run build`     | `tsc -b && vite build` | Type-check + production bundle to `dist/`    |
+| `npm run lint`      | `eslint .`       | Lint all TypeScript/TSX files                      |
+| `npm run preview`   | `vite preview`   | Serve the production build locally for testing     |
+
+---
+
+## 12. Future Improvements
+
+| Priority | Improvement                                                                                        |
+| -------- | -------------------------------------------------------------------------------------------------- |
+| 🔴 High  | **Lazy loading** — Code-split routes with `React.lazy()` + `Suspense` to reduce initial bundle size. |
+| 🔴 High  | **Error boundaries** — Add React Error Boundaries to prevent full-app crashes from component errors. |
+| 🔴 High  | **Accessibility (a11y)** — Add ARIA labels, keyboard navigation, focus management, and screen reader support. |
+| 🟡 Med   | **Product pagination** — Replace loading all products at once with paginated/infinite scroll.       |
+| 🟡 Med   | **Image optimization** — Use responsive `srcset`, lazy loading attributes, and WebP format.         |
+| 🟡 Med   | **Form library** — Replace manual form validation with React Hook Form + Zod for declarative schemas. |
+| 🟡 Med   | **Wishlist persistence** — Store wishlist state server-side instead of component-local state.        |
+| 🟡 Med   | **SEO** — Add React Helmet for meta tags, Open Graph data, and structured data markup.              |
+| 🟡 Med   | **Internationalization (i18n)** — Formalize the bilingual UI with a library like `react-i18next`.   |
+| 🟡 Med   | **Unit tests** — Add Vitest + Testing Library for component and hook testing.                       |
+| 🟢 Low   | **PWA support** — Add service worker and manifest for offline capability and install prompts.        |
+| 🟢 Low   | **State persistence library** — Replace manual localStorage sync with `redux-persist`.              |
+| 🟢 Low   | **Admin responsive layout** — The admin panel sidebar is fixed-width and not mobile-friendly.        |
+| 🟢 Low   | **Storybook** — Create a component library with Storybook for isolated development and documentation. |
+| 🟢 Low   | **E2E tests** — Add Playwright or Cypress for end-to-end user flow testing.                         |
+
+---
+
+*Last updated: June 2026*

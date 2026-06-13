@@ -55,22 +55,50 @@ app.get('/api/test-ai', async (_req, res) => {
     results.deepseekError = err.message || err;
   }
 
+  // Test callGemini function exactly as used in chatService
   try {
     results.geminiKeyLength = env.GEMINI_API_KEY ? env.GEMINI_API_KEY.length : 0;
+    
+    const systemPrompt = "Bạn là trợ lý AI của cửa hàng Classic Records (bán Vinyl, CD, Merch). Trả lời bằng tiếng Việt, ngắn gọn, thân thiện.";
+    const history = [
+      { role: 'assistant', content: '👋 Xin chào! Tôi là trợ lý ảo của Classic Records.' }
+    ];
+    const message = "Có những Merch gì?";
+
+    const contents = [];
+    for (const h of history) {
+      contents.push({
+        role: h.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: h.content || '' }],
+      });
+    }
+    contents.push({
+      role: 'user',
+      parts: [{ text: message }],
+    });
+
     const gemRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Hello' }] }]
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
+          },
+          contents,
+          generationConfig: {
+            temperature: 0.5,
+            maxOutputTokens: 1024,
+          },
         }),
       }
     );
+    
     results.geminiStatus = gemRes.status;
     results.geminiBody = await gemRes.json();
   } catch (err: any) {
-    results.geminiError = err.message || err;
+    results.geminiError = err.stack || err.message || err;
   }
 
   res.json(results);
